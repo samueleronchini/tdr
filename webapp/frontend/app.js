@@ -9,6 +9,7 @@ const iotaMaxInput = document.getElementById("iota-max");
 const raInput = document.getElementById("ra");
 const decInput = document.getElementById("dec");
 const coordsFields = document.getElementById("coords-fields");
+const skymapField = document.getElementById("skymap-field");
 
 const runBtn = document.getElementById("run-btn");
 const cancelBtn = document.getElementById("cancel-btn");
@@ -66,6 +67,8 @@ function applyLocalizationMode() {
   skymapUploadInput.disabled = usingCoords;
   coordsFields.hidden = !usingCoords;
   coordsFields.style.display = usingCoords ? "" : "none";
+  skymapField.hidden = usingCoords;
+  skymapField.style.display = usingCoords ? "none" : "";
 }
 
 function parseOptionalFloat(inputEl) {
