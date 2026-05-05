@@ -89,7 +89,7 @@
                 </tr>
                 <tr>
                   <td><code>--iota-min</code>, <code>--iota-max</code></td>
-                  <td>Custom inclination range. If omitted, defaults are 0-45 and 0-90 deg.</td>
+                  <td>Custom inclination range. If omitted, defaults are 0-45 and 0-90 deg. The inlcination angle is the angle between the orbital plane and the line of sight. It is distributed uniformly in cos(iota) from iota_min to iota_max.</td>
                 </tr>
                 <tr>
                   <td><code>--snr-threshold</code></td>
@@ -97,7 +97,7 @@
                 </tr>
                 <tr>
                   <td><code>--snr-type</code></td>
-                  <td><code>mf</code> (matched-filter-like) or <code>opt</code> (optimal).</td>
+                  <td><code>mf</code> (matched-filter SNR) or <code>opt</code> (optimal SNR).</td>
                 </tr>
               </tbody>
             </table>
