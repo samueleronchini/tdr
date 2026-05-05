@@ -27,3 +27,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["targ_ac_git*"]
+
+[project.scripts]
+tdr = "targ_ac_git.targ_range_snr_mf:targ_range"

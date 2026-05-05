@@ -37,6 +37,8 @@ Alternatively, the user can provide a custom inclination interval using --iota-m
 INSTALLATION
 ============
 
+**Prerequisites:** You must have either `wget` or `curl` installed on your system to download the strain data from GWOSC.
+
 Create a fresh conda environment:
 
     conda create -n TDR_grb python=3.11 pip

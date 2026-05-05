@@ -237,7 +237,7 @@ def _get_run_config(t0):
     for run in RUNS:
         if run["start"] <= t0 <= run["end"]:
             return run
-    raise RuntimeError(f"t0={t0} is outside the configured run ranges")
+    raise RuntimeError(f"t0={t0} is outside the ranges covered by public GWOSC runs")
 
 
 def _resolve_ifo_config(run_cfg, ifo, t0):
@@ -288,17 +288,26 @@ def _ensure_cached_file(url, cache_dir):
     if os.path.exists(tmp_path):
         os.remove(tmp_path)
 
-    cmd = ["wget", "--quiet", "--tries=5", "--timeout=60", "--waitretry=10", "-O", tmp_path, url]
+    import shutil
+    cmd = []
+    print(f"Downloading {url} ... (this may take a while depending on your connection)", flush=True)
+    if shutil.which("wget"):
+        cmd = ["wget", "--tries=5", "--timeout=60", "--waitretry=10", "-O", tmp_path, url]
+    elif shutil.which("curl"):
+        # curl equivalents: --retry 5, --max-time 600, --retry-delay 10, -L (follow redirects), -o output
+        cmd = ["curl", "-L", "--progress-bar", "--retry", "5", "--retry-delay", "10", "--max-time", "600", "-o", tmp_path, url]
+    else:
+        raise GWOSCTransientError("Neither wget nor curl is installed on this system")
 
     try:
         subprocess.run(cmd, check=True)
     except subprocess.CalledProcessError as exc:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
-        raise GWOSCTransientError(f"wget failed for {url}: {exc}") from exc
+        raise GWOSCTransientError(f"Download failed for {url}: {exc}") from exc
 
     if not os.path.exists(tmp_path):
-        raise GWOSCTransientError(f"wget did not create output file for {url}")
+        raise GWOSCTransientError(f"Download did not create output file for {url}")
 
     os.replace(tmp_path, path)
 
