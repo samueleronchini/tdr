@@ -811,7 +811,10 @@ async function renderPdfFirstPageImage(pdfUrl, altText) {
     img.alt = altText;
     img.loading = "lazy";
     img.decoding = "async";
-    return img;
+    return {
+      img,
+      ratio: canvas.width > 0 && canvas.height > 0 ? canvas.width / canvas.height : null,
+    };
   } catch (_err) {
     return null;
   } finally {
@@ -823,6 +826,51 @@ async function renderPdfFirstPageImage(pdfUrl, altText) {
       }
     }
   }
+}
+
+function createPlotMediaFrame() {
+  const frame = document.createElement("div");
+  frame.className = "plot-media-frame";
+  return frame;
+}
+
+function applyFrameAspectRatio(frame, ratio) {
+  if (!Number.isFinite(ratio) || ratio <= 0) {
+    return;
+  }
+  frame.style.aspectRatio = String(ratio);
+}
+
+function mountImageInFrame(card, img, presetRatio = null) {
+  const frame = createPlotMediaFrame();
+  applyFrameAspectRatio(frame, presetRatio);
+
+  img.classList.add("plot-image");
+
+  const syncRatioFromImage = () => {
+    const w = Number(img.naturalWidth);
+    const h = Number(img.naturalHeight);
+    if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) {
+      applyFrameAspectRatio(frame, w / h);
+    }
+  };
+
+  img.addEventListener("load", syncRatioFromImage, { once: true });
+  if (img.complete) {
+    syncRatioFromImage();
+  }
+
+  frame.appendChild(img);
+  card.appendChild(frame);
+}
+
+function mountPlaceholderInFrame(card, message) {
+  const frame = createPlotMediaFrame();
+  const placeholder = document.createElement("div");
+  placeholder.className = "plot-preview-empty";
+  placeholder.textContent = message;
+  frame.appendChild(placeholder);
+  card.appendChild(frame);
 }
 
 function isPreviewImageArtifact(artifact) {
@@ -929,28 +977,22 @@ async function renderPlotCards(plotFiles) {
 
     if (previewArtifact && isImagePath(artifactPathKey(previewArtifact))) {
       const img = document.createElement("img");
-      img.className = "plot-image";
       img.src = artifactPreviewUrl(previewArtifact);
       img.alt = sanitizeDisplayText(artifact.relative_path);
       img.loading = "lazy";
-      card.appendChild(img);
+      img.decoding = "async";
+      mountImageInFrame(card, img);
     } else if (isPdf) {
       const altText = sanitizeDisplayText(artifact.relative_path || artifact.name || "Plot preview");
       const renderedImage = await renderPdfFirstPageImage(url, altText);
 
       if (renderedImage) {
-        card.appendChild(renderedImage);
+        mountImageInFrame(card, renderedImage.img, renderedImage.ratio);
       } else {
-        const placeholder = document.createElement("div");
-        placeholder.className = "plot-preview-empty";
-        placeholder.textContent = "Preview image not available.";
-        card.appendChild(placeholder);
+        mountPlaceholderInFrame(card, "Preview image not available.");
       }
     } else {
-      const placeholder = document.createElement("div");
-      placeholder.className = "plot-preview-empty";
-      placeholder.textContent = "Preview image not available.";
-      card.appendChild(placeholder);
+      mountPlaceholderInFrame(card, "Preview image not available.");
     }
 
     const actionBox = document.createElement("div");
