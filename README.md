@@ -260,7 +260,6 @@ Example 1: fixed sky position
 
 Use this when the GRB sky position is known.
 
-    OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
     python -m targ_ac_git.targ_range_snr_mf \
         --output-dir <output_directory> \
         --t0 <trigger_time> \
@@ -271,7 +270,6 @@ Use this when the GRB sky position is known.
 
 Example:
 
-    OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
     python -m targ_ac_git.targ_range_snr_mf \
         --output-dir GRB_GIT \
         --t0 2020-03-26T12:24:47.903 \
@@ -286,7 +284,6 @@ Example 2: using a sky map
 
 Use this when a HEALPix localization file is available.
 
-    OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
     python -m targ_ac_git.targ_range_snr_mf \
         --output-dir <output_directory> \
         --t0 <trigger_time> \
@@ -296,11 +293,10 @@ Use this when a HEALPix localization file is available.
 
 Example:
 
-    OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
     python -m targ_ac_git.targ_range_snr_mf \
         --output-dir GRB_GIT \
         --t0 2020-03-26T12:24:47.903 \
-        --skymap-file glg_healpix_all_bn200326517_v00.fit \
+        --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
         --snr-threshold 8.5 \
         --snr-statistic mf
 
@@ -315,11 +311,10 @@ If --iota-min and --iota-max are omitted, the code evaluates both:
 
 To run only a custom inclination range:
 
-    OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
     python -m targ_ac_git.targ_range_snr_mf \
         --output-dir GRB_GIT \
         --t0 2020-03-26T12:24:47.903 \
-        --skymap-file glg_healpix_all_bn200326517_v00.fit \
+        --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
         --iota-min 0 \
         --iota-max 30 \
         --snr-threshold 8.5 \
@@ -329,13 +324,6 @@ To run only a custom inclination range:
 NOTES
 =====
 
-The environment variables:
-
-    OMP_NUM_THREADS=1
-    MKL_NUM_THREADS=1
-    OPENBLAS_NUM_THREADS=1
-
-limit the number of CPU threads used internally by numerical libraries. This is useful on shared systems and avoids oversubscription.
 
 The code currently performs a single-trigger analysis. It does not run a time scan, does not use multiprocessing, and does not read a CSV file of GRBs.
 

@@ -325,7 +325,7 @@ def build_parser():
     parser.add_argument("--iota-min", type=float, default=None, help="Minimum inclination angle in degrees.")
     parser.add_argument("--iota-max", type=float, default=None, help="Maximum inclination angle in degrees.")
     parser.add_argument("--snr-threshold", type=float, default=8.5, help="SNR threshold used to define D90. Default: 8.5.")
-   parser.add_argument("--snr-statistic", choices=["mf", "opt"], default="mf",
+    parser.add_argument("--snr-statistic", choices=["mf", "opt"], default="mf",
         help="SNR statistic used to define the TDR: 'mf' for matched-filter SNR, 'opt' for optimal SNR. Default: mf.",
     )
 
