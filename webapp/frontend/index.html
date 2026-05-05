@@ -15,11 +15,15 @@
 
   <main class="shell">
     <header class="hero">
-      <p class="eyebrow">TDR Local Compute</p>
-      <h1>Run TDR from a web UI</h1>
+      <h1>GW targeted detectability range</h1>
       <p>
-        This interface always submits jobs to the backend running on this machine.
-        Fill parameters and launch runs.
+        Submit and monitor TDR runs from this web interface.
+      </p>
+      <p class="hero-doc">
+        Documentation:
+        <a href="./docs/">Open GitHub Pages docs</a>
+        ·
+        <a href="https://gw-tdr.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">ReadTheDocs</a>
       </p>
     </header>
 
@@ -140,18 +144,41 @@
         <h3>Produced Plots</h3>
         <div id="plots-gallery" class="plots-grid"></div>
 
-        <h3>JSON Content</h3>
+        <div id="ifos-line" class="ifos-line" hidden>
+          <span class="label">Online IFOs</span>
+          <span id="ifos-online" class="mono">-</span>
+        </div>
+
+        <h3>Results Summary</h3>
+        <p id="results-angle-note" class="hint results-note"></p>
+
+        <h4 class="table-title">BNS (results_bns.json)</h4>
         <div class="table-wrap">
           <table class="artifact-table">
             <thead>
               <tr>
-                <th>File</th>
-                <th>Key</th>
-                <th>Value</th>
+                <th>Mass Combination</th>
+                <th>Iota Range (deg)</th>
+                <th>D90 (Mpc)</th>
                 <th>Download</th>
               </tr>
             </thead>
-            <tbody id="json-table-body"></tbody>
+            <tbody id="json-bns-body"></tbody>
+          </table>
+        </div>
+
+        <h4 class="table-title">NSBH (results_nsbh.json)</h4>
+        <div class="table-wrap">
+          <table class="artifact-table">
+            <thead>
+              <tr>
+                <th>Mass Combination</th>
+                <th>Iota Range (deg)</th>
+                <th>D90 (Mpc)</th>
+                <th>Download</th>
+              </tr>
+            </thead>
+            <tbody id="json-nsbh-body"></tbody>
           </table>
         </div>
       </section>

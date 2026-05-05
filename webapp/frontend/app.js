@@ -20,9 +20,14 @@ const jobReturn = document.getElementById("job-return");
 const jobCommand = document.getElementById("job-command");
 const jobOutputDir = document.getElementById("job-output-dir");
 const logOutput = document.getElementById("log-output");
+
 const artifactsSection = document.getElementById("artifacts");
+const ifosLine = document.getElementById("ifos-line");
+const ifosOnline = document.getElementById("ifos-online");
 const plotsGallery = document.getElementById("plots-gallery");
-const jsonTableBody = document.getElementById("json-table-body");
+const resultsAngleNote = document.getElementById("results-angle-note");
+const bnsResultsBody = document.getElementById("json-bns-body");
+const nsbhResultsBody = document.getElementById("json-nsbh-body");
 
 function normalizeApiBase(rawBase) {
   return (rawBase || "").trim().replace(/\/+$/, "");
@@ -34,16 +39,125 @@ const LOCAL_API_BASE = normalizeApiBase(`http://${HOSTNAME}:8000`);
 const CONFIGURED_PUBLIC_API_BASE = normalizeApiBase(window.TDR_WEB_CONFIG?.publicApiBase || "");
 const API_BASE = IS_GITHUB_PAGES ? CONFIGURED_PUBLIC_API_BASE : LOCAL_API_BASE;
 
+const SENSITIVE_RESULTS_ROOT = "/Users/sjs8171/Desktop/gw_tdr_results";
 let currentJobId = null;
 let pollTimer = null;
-const MAX_JSON_ROWS_PER_FILE = 400;
+
+function shortenAbsolutePath(pathValue) {
+  if (pathValue === SENSITIVE_RESULTS_ROOT) {
+    return "gw_tdr_results";
+  }
+
+  if (pathValue.startsWith(`${SENSITIVE_RESULTS_ROOT}/`)) {
+    return pathValue.replace(`${SENSITIVE_RESULTS_ROOT}/`, "gw_tdr_results/");
+  }
+
+  const segments = pathValue.split("/").filter(Boolean);
+  if (segments.length === 0) {
+    return pathValue;
+  }
+
+  if (segments.length === 1) {
+    return segments[0];
+  }
+
+  return `.../${segments.slice(-2).join("/")}`;
+}
+
+function sanitizeDisplayText(value) {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+
+  return String(value).replace(/\/Users\/[^\s"'`]+/g, (token) => shortenAbsolutePath(token));
+}
+
+function tokenizeCommand(commandLine) {
+  if (!commandLine) {
+    return [];
+  }
+
+  const rawTokens = commandLine.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+  return rawTokens.map((token) => {
+    if ((token.startsWith("\"") && token.endsWith("\"")) || (token.startsWith("'") && token.endsWith("'"))) {
+      return token.slice(1, -1);
+    }
+    return token;
+  });
+}
+
+function getArgValue(tokens, argName) {
+  const idx = tokens.indexOf(argName);
+  if (idx === -1 || idx + 1 >= tokens.length) {
+    return null;
+  }
+  return tokens[idx + 1];
+}
+
+function buildInputSummary(commandLine) {
+  if (!commandLine || !commandLine.includes("targ_ac_git.targ_range_snr_mf")) {
+    return "";
+  }
+
+  const tokens = tokenizeCommand(commandLine);
+  const t0 = getArgValue(tokens, "--t0") || "-";
+  const snrThreshold = getArgValue(tokens, "--snr-threshold") || "-";
+  const snrType = getArgValue(tokens, "--snr-type") || "-";
+  const iotaMin = getArgValue(tokens, "--iota-min");
+  const iotaMax = getArgValue(tokens, "--iota-max");
+  const ra = getArgValue(tokens, "--ra");
+  const dec = getArgValue(tokens, "--dec");
+  const skymapFile = getArgValue(tokens, "--skymap-file");
+  const outputDir = getArgValue(tokens, "--output-dir");
+
+  const outputName = outputDir ? outputDir.split("/").filter(Boolean).pop() : "-";
+
+  const localizationText = skymapFile
+    ? `localization=skymap (${sanitizeDisplayText(skymapFile.split("/").pop())})`
+    : `localization=coords (ra=${ra || "-"}, dec=${dec || "-"})`;
+
+  const iotaText = iotaMin !== null && iotaMax !== null ? `${iotaMin}-${iotaMax} deg` : "default 0-45, 0-90 deg";
+
+  return sanitizeDisplayText(
+    `Input parameters used: transient=${outputName || "-"}; t0=${t0}; snr_threshold=${snrThreshold}; snr_type=${snrType}; ${localizationText}; iota=${iotaText}`,
+  );
+}
+
+function isCommandEchoLine(line) {
+  if (!line) {
+    return false;
+  }
+  return /targ_ac_git\.targ_range_snr_mf|--output-dir|--cache-dir/.test(line);
+}
+
+function sanitizeLogLines(logTail, commandLine) {
+  const cleanLines = [];
+  const summary = buildInputSummary(commandLine);
+
+  if (summary) {
+    cleanLines.push(summary);
+  }
+
+  for (const rawLine of logTail || []) {
+    const line = sanitizeDisplayText(rawLine);
+    if (!line.trim()) {
+      continue;
+    }
+    if (isCommandEchoLine(line)) {
+      continue;
+    }
+    cleanLines.push(line);
+  }
+
+  return cleanLines.length > 0 ? cleanLines : ["No log lines yet."];
+}
 
 function buildApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
 function setFlash(message, isError = false) {
-  flash.textContent = message || "";
+  flash.textContent = sanitizeDisplayText(message || "");
   flash.style.color = isError ? "#b42318" : "#146c43";
 }
 
@@ -77,28 +191,38 @@ function parseOptionalFloat(inputEl) {
     return null;
   }
 
-  const val = Number(raw);
-  if (!Number.isFinite(val)) {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
     throw new Error(`Invalid number: ${raw}`);
   }
 
-  return val;
+  return value;
+}
+
+function clearTableBody(tbody) {
+  while (tbody.firstChild) {
+    tbody.removeChild(tbody.firstChild);
+  }
+}
+
+function addInfoRow(tbody, text, cssClass = "empty-row") {
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+  cell.colSpan = 4;
+  cell.className = cssClass;
+  cell.textContent = sanitizeDisplayText(text);
+  row.appendChild(cell);
+  tbody.appendChild(row);
 }
 
 function clearArtifacts() {
   artifactsSection.hidden = true;
   plotsGallery.innerHTML = "";
-  jsonTableBody.innerHTML = "";
-}
-
-function addNoArtifactsMessage() {
-  const row = document.createElement("tr");
-  const cell = document.createElement("td");
-  cell.colSpan = 4;
-  cell.textContent = "No JSON products found for this run.";
-  cell.className = "empty-row";
-  row.appendChild(cell);
-  jsonTableBody.appendChild(row);
+  clearTableBody(bnsResultsBody);
+  clearTableBody(nsbhResultsBody);
+  ifosLine.hidden = true;
+  ifosOnline.textContent = "-";
+  resultsAngleNote.textContent = "";
 }
 
 function validateFitsFile(file) {
@@ -204,7 +328,7 @@ async function apiFetch(url, options = {}) {
 
   try {
     bodyParsed = text ? JSON.parse(text) : null;
-  } catch (err) {
+  } catch (_err) {
     bodyParsed = text;
   }
 
@@ -216,190 +340,204 @@ async function apiFetch(url, options = {}) {
   return bodyParsed;
 }
 
-function toDisplayValue(value) {
-  if (value === null) {
-    return "null";
+function formatNumber(value, digits = 3) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return "-";
   }
 
-  if (typeof value === "string") {
-    return value.length > 180 ? `${value.slice(0, 177)}...` : value;
-  }
-
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-
-  const asText = JSON.stringify(value);
-  if (asText === undefined) {
-    return "";
-  }
-
-  return asText.length > 180 ? `${asText.slice(0, 177)}...` : asText;
+  return num.toFixed(digits).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
 }
 
-function flattenJson(value, prefix = "") {
-  const rows = [];
+function findJsonArtifact(jsonFiles, fileName) {
+  return (jsonFiles || []).find((artifact) => artifact?.name === fileName) || null;
+}
 
-  if (value === null || typeof value !== "object") {
-    rows.push({ key: prefix || "(value)", value: toDisplayValue(value) });
-    return rows;
+async function fetchJsonArtifact(artifact) {
+  if (!artifact) {
+    return { data: null, error: "File not found" };
   }
 
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      rows.push({ key: prefix || "(array)", value: "[]" });
-      return rows;
+  try {
+    const response = await fetch(artifactPreviewUrl(artifact), { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
 
-    value.forEach((item, index) => {
-      const childKey = prefix ? `${prefix}[${index}]` : `[${index}]`;
-      rows.push(...flattenJson(item, childKey));
-    });
-    return rows;
+    const text = await response.text();
+    return { data: JSON.parse(text), error: null };
+  } catch (err) {
+    return { data: null, error: err.message || "Unable to load JSON" };
+  }
+}
+
+function extractTdrRows(resultsJson, sourceKey) {
+  const source = resultsJson && typeof resultsJson === "object" ? resultsJson[sourceKey] : null;
+  if (!source || typeof source !== "object") {
+    return [];
   }
 
-  const keys = Object.keys(value);
-  if (keys.length === 0) {
-    rows.push({ key: prefix || "(object)", value: "{}" });
-    return rows;
-  }
+  const rows = [];
 
-  for (const key of keys) {
-    const childKey = prefix ? `${prefix}.${key}` : key;
-    const child = value[key];
-    if (child !== null && typeof child === "object") {
-      rows.push(...flattenJson(child, childKey));
-    } else {
-      rows.push({ key: childKey, value: toDisplayValue(child) });
+  for (const [massKey, massPayload] of Object.entries(source)) {
+    const tdr = massPayload && typeof massPayload === "object" ? massPayload.tdr : null;
+    if (!tdr || typeof tdr !== "object") {
+      rows.push({
+        mass: massKey,
+        iotaLabel: "-",
+        d90: "-",
+      });
+      continue;
+    }
+
+    const tdrEntries = Object.entries(tdr);
+    if (tdrEntries.length === 0) {
+      rows.push({
+        mass: massKey,
+        iotaLabel: "-",
+        d90: "-",
+      });
+      continue;
+    }
+
+    for (const [label, tdrItem] of tdrEntries) {
+      const iotaMin = formatNumber(tdrItem?.iota_min_deg, 1);
+      const iotaMax = formatNumber(tdrItem?.iota_max_deg, 1);
+      const iotaLabel = iotaMin !== "-" && iotaMax !== "-" ? `${iotaMin}-${iotaMax}` : label;
+
+      rows.push({
+        mass: massKey,
+        iotaLabel,
+        d90: formatNumber(tdrItem?.D90_Mpc, 3),
+      });
     }
   }
 
   return rows;
 }
 
-function appendJsonRows(artifact, rows, truncated) {
-  const downloadUrl = artifactDownloadUrl(artifact);
+function renderResultRows(tbody, rows, downloadUrl) {
+  clearTableBody(tbody);
 
-  rows.forEach((item) => {
-    const row = document.createElement("tr");
-
-    const fileCell = document.createElement("td");
-    fileCell.textContent = artifact.relative_path;
-
-    const keyCell = document.createElement("td");
-    keyCell.textContent = item.key;
-
-    const valueCell = document.createElement("td");
-    valueCell.className = "value-cell";
-    valueCell.textContent = item.value;
-
-    const downloadCell = document.createElement("td");
-    const downloadLink = document.createElement("a");
-    downloadLink.href = downloadUrl;
-    downloadLink.target = "_blank";
-    downloadLink.rel = "noopener noreferrer";
-    downloadLink.textContent = "Download";
-    downloadCell.appendChild(downloadLink);
-
-    row.appendChild(fileCell);
-    row.appendChild(keyCell);
-    row.appendChild(valueCell);
-    row.appendChild(downloadCell);
-    jsonTableBody.appendChild(row);
-  });
-
-  if (truncated) {
-    const truncRow = document.createElement("tr");
-    const truncCell = document.createElement("td");
-    truncCell.colSpan = 4;
-    truncCell.className = "empty-row";
-    truncCell.textContent = `Rows truncated for ${artifact.relative_path}.`;
-    truncRow.appendChild(truncCell);
-    jsonTableBody.appendChild(truncRow);
-  }
-}
-
-async function renderJsonContent(jsonFiles) {
-  if (jsonFiles.length === 0) {
-    addNoArtifactsMessage();
+  if (rows.length === 0) {
+    addInfoRow(tbody, "No rows available.");
     return;
   }
 
-  for (const artifact of jsonFiles) {
-    const url = artifactPreviewUrl(artifact);
-    try {
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+  for (const rowData of rows) {
+    const row = document.createElement("tr");
 
-      const text = await response.text();
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (err) {
-        appendJsonRows(
-          artifact,
-          [{ key: "(raw)", value: text.length > 180 ? `${text.slice(0, 177)}...` : text }],
-          false,
-        );
-        continue;
-      }
+    const massCell = document.createElement("td");
+    massCell.textContent = sanitizeDisplayText(rowData.mass);
 
-      const flatRows = flattenJson(parsed);
-      const limitedRows = flatRows.slice(0, MAX_JSON_ROWS_PER_FILE);
-      const truncated = flatRows.length > MAX_JSON_ROWS_PER_FILE;
-      appendJsonRows(artifact, limitedRows, truncated);
-    } catch (err) {
-      appendJsonRows(
-        artifact,
-        [{ key: "(error)", value: `Unable to load JSON content: ${err.message}` }],
-        false,
-      );
+    const iotaCell = document.createElement("td");
+    iotaCell.textContent = sanitizeDisplayText(rowData.iotaLabel);
+
+    const d90Cell = document.createElement("td");
+    d90Cell.textContent = sanitizeDisplayText(rowData.d90);
+
+    const downloadCell = document.createElement("td");
+    if (downloadUrl) {
+      const downloadLink = document.createElement("a");
+      downloadLink.href = downloadUrl;
+      downloadLink.target = "_blank";
+      downloadLink.rel = "noopener noreferrer";
+      downloadLink.textContent = "Download";
+      downloadCell.appendChild(downloadLink);
+    } else {
+      downloadCell.textContent = "-";
     }
+
+    row.appendChild(massCell);
+    row.appendChild(iotaCell);
+    row.appendChild(d90Cell);
+    row.appendChild(downloadCell);
+    tbody.appendChild(row);
   }
 }
 
-async function loadArtifacts(jobId) {
+function updateIfoLine(ifosPayload) {
+  const used = Array.isArray(ifosPayload?.used_ifos) ? ifosPayload.used_ifos : [];
+  const available = Array.isArray(ifosPayload?.strain_available_ifos) ? ifosPayload.strain_available_ifos : [];
+  const onlineIfos = used.length > 0 ? used : available;
+
+  if (onlineIfos.length === 0) {
+    ifosLine.hidden = true;
+    ifosOnline.textContent = "-";
+    return;
+  }
+
+  ifosOnline.textContent = sanitizeDisplayText(onlineIfos.join(", "));
+  ifosLine.hidden = false;
+}
+
+function updateAngleNote(bnsRows, nsbhRows) {
+  const labels = new Set([...bnsRows, ...nsbhRows].map((row) => row.iotaLabel).filter((val) => val && val !== "-"));
+
+  if (labels.size === 0) {
+    resultsAngleNote.textContent = "No iota range rows available in JSON results.";
+    return;
+  }
+
+  const sorted = Array.from(labels).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const isDefault = sorted.length === 2 && sorted.includes("0-45") && sorted.includes("0-90");
+
+  if (isDefault) {
+    resultsAngleNote.textContent = "Showing default iota ranges 0-45 and 0-90 deg for each mass combination.";
+  } else {
+    resultsAngleNote.textContent = `Showing user-defined iota range(s): ${sorted.join(", ")} deg.`;
+  }
+}
+
+async function getPdfAspectRatio(url) {
   try {
-    return await apiFetch(`${API_BASE}/api/jobs/${jobId}/artifacts`);
-  } catch (err) {
-    setFlash(`Artifact loading error: ${err.message}`, true);
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) {
+      return null;
+    }
+
+    const bytes = await response.arrayBuffer();
+    const scanLimit = Math.min(bytes.byteLength, 600000);
+    const text = new TextDecoder("latin1").decode(bytes.slice(0, scanLimit));
+    const match = text.match(/\/MediaBox\s*\[\s*([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s*\]/);
+    if (!match) {
+      return null;
+    }
+
+    const x0 = Number(match[1]);
+    const y0 = Number(match[2]);
+    const x1 = Number(match[3]);
+    const y1 = Number(match[4]);
+    const width = Math.abs(x1 - x0);
+    const height = Math.abs(y1 - y0);
+
+    if (!Number.isFinite(width) || !Number.isFinite(height) || height === 0) {
+      return null;
+    }
+
+    return width / height;
+  } catch (_err) {
     return null;
   }
 }
 
-async function renderArtifacts(job) {
-  clearArtifacts();
+async function renderPlotCards(plotFiles) {
+  plotsGallery.innerHTML = "";
 
-  const artifactsPayload = await loadArtifacts(job.job_id);
-
-  const fallbackPlotFiles = Array.isArray(job.plot_files) ? job.plot_files : [];
-  const fallbackJsonFiles = Array.isArray(job.json_files) ? job.json_files : [];
-
-  const plotFiles =
-    artifactsPayload && Array.isArray(artifactsPayload.plot_files)
-      ? artifactsPayload.plot_files
-      : fallbackPlotFiles;
-  const jsonFiles =
-    artifactsPayload && Array.isArray(artifactsPayload.json_files)
-      ? artifactsPayload.json_files
-      : fallbackJsonFiles;
-
-  if (plotFiles.length === 0 && jsonFiles.length === 0) {
-    addNoArtifactsMessage();
-    artifactsSection.hidden = false;
+  if (!Array.isArray(plotFiles) || plotFiles.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-row";
+    empty.textContent = "No plot artifacts found for this run.";
+    plotsGallery.appendChild(empty);
     return;
   }
-
-  artifactsSection.hidden = false;
 
   for (const artifact of plotFiles) {
     const card = document.createElement("article");
     card.className = "plot-card";
 
     const title = document.createElement("h4");
-    title.textContent = artifact.relative_path;
+    title.textContent = sanitizeDisplayText(artifact.relative_path);
     card.appendChild(title);
 
     const url = artifactPreviewUrl(artifact);
@@ -407,16 +545,25 @@ async function renderArtifacts(job) {
     const ext = (artifact.name || "").toLowerCase();
 
     if (ext.endsWith(".pdf")) {
+      const frameWrap = document.createElement("div");
+      frameWrap.className = "plot-frame-wrap";
+
+      const ratio = await getPdfAspectRatio(url);
+      if (ratio && Number.isFinite(ratio) && ratio > 0) {
+        frameWrap.style.aspectRatio = String(ratio);
+      }
+
       const frame = document.createElement("iframe");
       frame.className = "plot-frame";
       frame.src = `${url}#view=FitH`;
       frame.loading = "lazy";
-      card.appendChild(frame);
+      frameWrap.appendChild(frame);
+      card.appendChild(frameWrap);
     } else {
       const img = document.createElement("img");
       img.className = "plot-image";
       img.src = url;
-      img.alt = artifact.relative_path;
+      img.alt = sanitizeDisplayText(artifact.relative_path);
       img.loading = "lazy";
       card.appendChild(img);
     }
@@ -442,8 +589,82 @@ async function renderArtifacts(job) {
 
     plotsGallery.appendChild(card);
   }
+}
 
-  await renderJsonContent(jsonFiles);
+async function renderResultsTables(jsonFiles) {
+  clearTableBody(bnsResultsBody);
+  clearTableBody(nsbhResultsBody);
+
+  const ifosArtifact = findJsonArtifact(jsonFiles, "ifos_used.json");
+  const bnsArtifact = findJsonArtifact(jsonFiles, "results_bns.json");
+  const nsbhArtifact = findJsonArtifact(jsonFiles, "results_nsbh.json");
+
+  const [ifosPayload, bnsPayload, nsbhPayload] = await Promise.all([
+    fetchJsonArtifact(ifosArtifact),
+    fetchJsonArtifact(bnsArtifact),
+    fetchJsonArtifact(nsbhArtifact),
+  ]);
+
+  if (ifosPayload.data) {
+    updateIfoLine(ifosPayload.data);
+  } else {
+    ifosLine.hidden = true;
+  }
+
+  let bnsRows = [];
+  if (!bnsArtifact) {
+    addInfoRow(bnsResultsBody, "results_bns.json not found.");
+  } else if (bnsPayload.error) {
+    addInfoRow(bnsResultsBody, `Unable to read results_bns.json: ${bnsPayload.error}`);
+  } else {
+    bnsRows = extractTdrRows(bnsPayload.data, "bns");
+    renderResultRows(bnsResultsBody, bnsRows, artifactDownloadUrl(bnsArtifact));
+  }
+
+  let nsbhRows = [];
+  if (!nsbhArtifact) {
+    addInfoRow(nsbhResultsBody, "results_nsbh.json not found.");
+  } else if (nsbhPayload.error) {
+    addInfoRow(nsbhResultsBody, `Unable to read results_nsbh.json: ${nsbhPayload.error}`);
+  } else {
+    nsbhRows = extractTdrRows(nsbhPayload.data, "nsbh");
+    renderResultRows(nsbhResultsBody, nsbhRows, artifactDownloadUrl(nsbhArtifact));
+  }
+
+  updateAngleNote(bnsRows, nsbhRows);
+}
+
+async function loadArtifacts(jobId) {
+  try {
+    return await apiFetch(`${API_BASE}/api/jobs/${jobId}/artifacts`);
+  } catch (err) {
+    setFlash(`Artifact loading error: ${err.message}`, true);
+    return null;
+  }
+}
+
+async function renderArtifacts(job) {
+  clearArtifacts();
+
+  const artifactsPayload = await loadArtifacts(job.job_id);
+
+  const fallbackPlotFiles = Array.isArray(job.plot_files) ? job.plot_files : [];
+  const fallbackJsonFiles = Array.isArray(job.json_files) ? job.json_files : [];
+
+  const plotFiles =
+    artifactsPayload && Array.isArray(artifactsPayload.plot_files)
+      ? artifactsPayload.plot_files
+      : fallbackPlotFiles;
+
+  const jsonFiles =
+    artifactsPayload && Array.isArray(artifactsPayload.json_files)
+      ? artifactsPayload.json_files
+      : fallbackJsonFiles;
+
+  artifactsSection.hidden = false;
+
+  await renderPlotCards(plotFiles);
+  await renderResultsTables(jsonFiles);
 }
 
 function renderJob(job) {
@@ -452,13 +673,16 @@ function renderJob(job) {
   }
 
   setStatus(job.status || "idle");
-  jobIdLabel.textContent = job.job_id || "-";
+  jobIdLabel.textContent = sanitizeDisplayText(job.job_id || "-");
   jobReturn.textContent = job.return_code === null || job.return_code === undefined ? "-" : String(job.return_code);
-  jobCommand.textContent = job.command || "-";
-  jobOutputDir.textContent = job.output_dir || "-";
+
+  const inputSummary = buildInputSummary(job.command || "");
+  jobCommand.textContent = inputSummary || sanitizeDisplayText(job.command || "-");
+  jobOutputDir.textContent = sanitizeDisplayText(job.output_dir || "-");
 
   if (Array.isArray(job.log_tail) && job.log_tail.length > 0) {
-    logOutput.textContent = job.log_tail.join("\n");
+    const cleanLogLines = sanitizeLogLines(job.log_tail, job.command || "");
+    logOutput.textContent = cleanLogLines.join("\n");
     logOutput.scrollTop = logOutput.scrollHeight;
   }
 
