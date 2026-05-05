@@ -1,3 +1,3 @@
 window.TDR_WEB_CONFIG = {
-  publicApiBase: "https://seq-talented-legacy-visual.trycloudflare.com",
+  publicApiBase: "https://discussed-bugs-him-wars.trycloudflare.com",
 };
