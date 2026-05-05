@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GW TDR Documentation</title>
-  <meta name="description" content="GitHub Pages documentation for the GW targeted detectability range tool.">
+  <title>GW TDR Docs - Intro</title>
+  <meta name="description" content="Introduction page for GW TDR documentation.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -12,8 +12,11 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="../">GW TDR</a>
+    <a class="brand" href="./">GW TDR Docs</a>
     <nav class="toplinks" aria-label="top links">
+      <a class="active" href="./">Intro</a>
+      <a href="./installation.html">Installation</a>
+      <a href="./usage.html">Usage and example of use</a>
       <a href="../">Web Runner</a>
       <a href="https://gw-tdr.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">ReadTheDocs</a>
       <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
@@ -22,224 +25,79 @@
 
   <main class="page">
     <section class="hero">
-      <p class="eyebrow">Documentation</p>
+      <p class="eyebrow">Intro</p>
       <h1>GW targeted detectability range</h1>
       <p>
-        This page mirrors the project documentation in a GitHub Pages layout optimized for readability,
-        quick command copy, and at-a-glance workflow navigation.
+        The <code>tdr</code> tool computes targeted detectability ranges (D90) for external astronomical
+        triggers, using trigger time and sky localization together with detector sensitivity.
       </p>
       <div class="hero-actions">
-        <a class="btn primary" href="#quickstart">Jump to quick start</a>
-        <a class="btn" href="#outputs">See output files</a>
+        <a class="btn primary" href="./usage.html">Go to usage example</a>
+        <a class="btn" href="./installation.html">Open installation</a>
       </div>
     </section>
 
     <div class="layout">
       <aside class="toc" aria-label="Table of contents">
         <h2>On this page</h2>
-        <a href="#overview">Overview</a>
+        <a href="#overview">What TDR does</a>
         <a href="#workflow">Workflow</a>
-        <a href="#install">Installation</a>
-        <a href="#quickstart">Quick start</a>
-        <a href="#options">Command options</a>
-        <a href="#outputs">Output structure</a>
-        <a href="#masses">Mass combinations</a>
-        <a href="#notes">Notes</a>
+        <a href="#outputs">Main outputs</a>
+        <a href="#network">Detector/network behavior</a>
       </aside>
 
       <article class="content">
         <section id="overview" class="card">
-          <h2>Overview</h2>
+          <h2>What TDR does</h2>
           <p>
-            The <code>tdr</code> tool estimates the targeted detectability range (D90) for compact-binary
-            gravitational-wave signals associated with an external astronomical trigger.
+            The range is defined as the distance at which 90% of simulated signals are detected above
+            a chosen SNR threshold, accounting for detector sensitivity and source sky position.
           </p>
-          <p>
-            Inputs include trigger time, localization (RA/DEC or sky map), SNR settings,
-            and optional custom inclination interval.
-          </p>
+          <p>The tool supports localization through RA/DEC or HEALPix FITS sky maps.</p>
         </section>
 
         <section id="workflow" class="card">
           <h2>Workflow</h2>
           <ol>
-            <li>Identify the LVK run from trigger time <code>t0</code>.</li>
-            <li>Check public GWOSC data availability for H1/L1/V1.</li>
-            <li>Download 256 s strain around the trigger.</li>
-            <li>Estimate PSD for available detectors.</li>
-            <li>Generate BNS and NSBH injections.</li>
-            <li>Compute SNR and derive D90 targeted range.</li>
-            <li>Write plots, maps, logs, and JSON summaries.</li>
+            <li>Identify the GW observing run from trigger time <code>t0</code>.</li>
+            <li>Check GWOSC data availability for H1/L1/V1.</li>
+            <li>Download a 256 s strain segment around the trigger.</li>
+            <li>Estimate PSDs for available detectors.</li>
+            <li>Generate BNS and NSBH injections with PyCBC.</li>
+            <li>Compute SNRs and D90 targeted range values.</li>
+            <li>Produce plots, sky maps, and JSON result files.</li>
           </ol>
         </section>
 
-        <section id="install" class="card">
-          <h2>Installation</h2>
-          <p class="label">Prerequisites</p>
-          <ul>
-            <li>Python 3.11</li>
-            <li>Scientific build toolchain (C/C++)</li>
-            <li><code>wget</code> or <code>curl</code> in PATH</li>
-          </ul>
-
-          <div class="codeblock">
-            <button class="copy-btn" data-copy-target="install-cmds" type="button">Copy</button>
-<pre id="install-cmds"><code>conda create -n TDR python=3.11 pip
-conda activate TDR
-pip install -r requirements.txt
-pip install -e .</code></pre>
-          </div>
-        </section>
-
-        <section id="quickstart" class="card">
-          <h2>Quick start</h2>
-          <p class="label">Run with sky coordinates</p>
-          <div class="codeblock">
-            <button class="copy-btn" data-copy-target="coords-cmd" type="button">Copy</button>
-<pre id="coords-cmd"><code>tdr \
-  --output-dir GRB_GIT \
-  --t0 2020-03-26T12:24:47.903 \
-  --ra 245.33 \
-  --dec -21.08 \
-  --snr-threshold 8.5 \
-  --snr-type mf</code></pre>
-          </div>
-
-          <p class="label">Run with sky map</p>
-          <div class="codeblock">
-            <button class="copy-btn" data-copy-target="skymap-cmd" type="button">Copy</button>
-<pre id="skymap-cmd"><code>tdr \
-  --output-dir GRB_GIT \
-  --t0 2020-03-26T12:24:47.903 \
-  --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
-  --snr-threshold 8.5 \
-  --snr-type mf</code></pre>
-          </div>
-        </section>
-
-        <section id="options" class="card">
-          <h2>Command options</h2>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Option</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>--output-dir</code></td>
-                  <td>Directory where outputs are written.</td>
-                </tr>
-                <tr>
-                  <td><code>--t0</code></td>
-                  <td>Trigger time in GPS seconds or ISO UTC.</td>
-                </tr>
-                <tr>
-                  <td><code>--ra</code>, <code>--dec</code></td>
-                  <td>Localization coordinates in degrees.</td>
-                </tr>
-                <tr>
-                  <td><code>--skymap-file</code></td>
-                  <td>HEALPix FITS sky map localization.</td>
-                </tr>
-                <tr>
-                  <td><code>--iota-min</code>, <code>--iota-max</code></td>
-                  <td>Custom inclination interval in degrees.</td>
-                </tr>
-                <tr>
-                  <td><code>--snr-threshold</code></td>
-                  <td>D90 detection threshold (default 8.5).</td>
-                </tr>
-                <tr>
-                  <td><code>--snr-type</code></td>
-                  <td><code>mf</code> (matched-filter-like) or <code>opt</code> (optimal).</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
         <section id="outputs" class="card">
-          <h2>Output structure</h2>
-          <div class="codeblock">
-<pre><code>&lt;output-dir&gt;/
-|-- targ_range.log
-|-- ifos_used.txt
-|-- ifos_used.json
-|-- gwosc_cache/
-|-- inj/
-|-- results/
-|-- psd_plot.pdf
-|-- bns_targeted_range.pdf
-|-- nsbh_targeted_range.pdf
-|-- results_bns.json
-|-- results_nsbh.json
-|-- range_map_bns_m1_1.4_m2_1.4.fits
-`-- range_map_bns_m1_1.4_m2_1.4.pdf</code></pre>
-          </div>
-        </section>
-
-        <section id="masses" class="card">
-          <h2>Mass combinations</h2>
-          <div class="columns">
-            <div>
-              <h3>BNS</h3>
-              <ul>
-                <li>m1=1.0, m2=1.0</li>
-                <li>m1=1.4, m2=1.4</li>
-                <li>m1=2.0, m2=2.0</li>
-              </ul>
-            </div>
-            <div>
-              <h3>NSBH</h3>
-              <ul>
-                <li>mBH=5.0, mNS=1.0</li>
-                <li>mBH=10.0, mNS=1.4</li>
-                <li>mBH=20.0, mNS=2.0</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section id="notes" class="card">
-          <h2>Notes</h2>
+          <h2>Main outputs</h2>
           <ul>
-            <li>First run is slower because GWOSC strain files are downloaded.</li>
-            <li>Later runs are faster with cache reuse.</li>
-            <li>If GWOSC is temporarily unreachable, rerun later.</li>
+            <li><code>targ_range.log</code>: run log with detector and processing details.</li>
+            <li><code>ifos_used.txt</code> and <code>ifos_used.json</code>: detector availability and usage.</li>
+            <li><code>psd_plot.pdf</code>: PSD curves used by the analysis.</li>
+            <li><code>bns_targeted_range.pdf</code> and <code>nsbh_targeted_range.pdf</code>: detection fraction curves.</li>
+            <li><code>results_bns.json</code> and <code>results_nsbh.json</code>: final D90 summaries.</li>
+            <li><code>range_map_bns_m1_1.4_m2_1.4.fits</code> and related PDF map output.</li>
           </ul>
+        </section>
+
+        <section id="network" class="card">
+          <h2>Detector/network behavior</h2>
+          <ul>
+            <li>If GWOSC is temporarily unreachable, the run is marked incomplete and can be retried later.</li>
+            <li>If a downloaded file is already in cache and valid, it is reused instead of downloaded again.</li>
+          </ul>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="./installation.html">Next: installation</a>
+            <a class="btn" href="./usage.html">Next: usage and example</a>
+          </div>
         </section>
       </article>
     </div>
   </main>
 
   <script>
-    const copyButtons = document.querySelectorAll('.copy-btn');
-    copyButtons.forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const targetId = btn.getAttribute('data-copy-target');
-        const target = document.getElementById(targetId);
-        if (!target) return;
-
-        const content = target.innerText;
-        try {
-          await navigator.clipboard.writeText(content);
-          const previous = btn.textContent;
-          btn.textContent = 'Copied';
-          setTimeout(() => {
-            btn.textContent = previous;
-          }, 1200);
-        } catch (_err) {
-          btn.textContent = 'Copy failed';
-          setTimeout(() => {
-            btn.textContent = 'Copy';
-          }, 1200);
-        }
-      });
-    });
-
     const tocLinks = Array.from(document.querySelectorAll('.toc a'));
     const sectionIds = tocLinks.map((a) => a.getAttribute('href')).filter(Boolean);
     const sections = sectionIds.map((id) => document.querySelector(id)).filter(Boolean);

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GW TDR Docs - Installation</title>
+  <meta name="description" content="Installation guide for GW targeted detectability range.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">GW TDR Docs</a>
+    <nav class="toplinks" aria-label="top links">
+      <a href="./">Intro</a>
+      <a class="active" href="./installation.html">Installation</a>
+      <a href="./usage.html">Usage and example of use</a>
+      <a href="../">Web Runner</a>
+      <a href="https://gw-tdr.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">ReadTheDocs</a>
+      <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Installation</p>
+      <h1>Install and verify TDR</h1>
+      <p>
+        Follow these steps to set up a working local environment for the <code>tdr</code> command-line tool.
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#install">Install commands</a>
+        <a class="btn" href="./usage.html">Go to usage</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="toc" aria-label="Table of contents">
+        <h2>On this page</h2>
+        <a href="#prereq">Prerequisites</a>
+        <a href="#env">Create environment</a>
+        <a href="#install">Install TDR</a>
+        <a href="#verify">Verify installation</a>
+        <a href="#notes">Notes</a>
+      </aside>
+
+      <article class="content">
+        <section id="prereq" class="card">
+          <h2>Prerequisites</h2>
+          <ul>
+            <li>Python 3.11</li>
+            <li>A working C/C++ build toolchain for scientific Python packages</li>
+            <li><code>wget</code> or <code>curl</code> available in PATH</li>
+          </ul>
+        </section>
+
+        <section id="env" class="card">
+          <h2>Create environment</h2>
+          <div class="codeblock">
+            <button class="copy-btn" data-copy-target="env-cmd" type="button">Copy</button>
+<pre id="env-cmd"><code>conda create -n TDR python=3.11 pip
+conda activate TDR</code></pre>
+          </div>
+        </section>
+
+        <section id="install" class="card">
+          <h2>Install TDR</h2>
+          <p>From the repository root:</p>
+          <div class="codeblock">
+            <button class="copy-btn" data-copy-target="install-cmd" type="button">Copy</button>
+<pre id="install-cmd"><code>pip install -r requirements.txt
+pip install -e .</code></pre>
+          </div>
+        </section>
+
+        <section id="verify" class="card">
+          <h2>Verify installation</h2>
+          <div class="codeblock">
+            <button class="copy-btn" data-copy-target="verify-cmd" type="button">Copy</button>
+<pre id="verify-cmd"><code>tdr --help</code></pre>
+          </div>
+        </section>
+
+        <section id="notes" class="card">
+          <h2>Notes</h2>
+          <ul>
+            <li>The first run may be slower because GWOSC strain files are downloaded.</li>
+            <li>Subsequent runs are faster when cache is reused.</li>
+          </ul>
+
+          <div class="hero-actions">
+            <a class="btn primary" href="./usage.html">Next: usage and example of use</a>
+          </div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const targetId = btn.getAttribute('data-copy-target');
+        const target = document.getElementById(targetId);
+        if (!target) return;
+
+        try {
+          await navigator.clipboard.writeText(target.innerText);
+          const oldText = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => {
+            btn.textContent = oldText;
+          }, 1200);
+        } catch (_err) {
+          btn.textContent = 'Copy failed';
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+          }, 1200);
+        }
+      });
+    });
+
+    const tocLinks = Array.from(document.querySelectorAll('.toc a'));
+    const sections = tocLinks
+      .map((a) => a.getAttribute('href'))
+      .filter(Boolean)
+      .map((id) => document.querySelector(id))
+      .filter(Boolean);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = `#${entry.target.id}`;
+          tocLinks.forEach((link) => {
+            link.classList.toggle('active', link.getAttribute('href') === id);
+          });
+        });
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0.01 },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+  </script>
+</body>
+</html>

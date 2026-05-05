@@ -26,8 +26,12 @@ const ifosLine = document.getElementById("ifos-line");
 const ifosOnline = document.getElementById("ifos-online");
 const plotsGallery = document.getElementById("plots-gallery");
 const resultsAngleNote = document.getElementById("results-angle-note");
+const bnsResultsHead = document.getElementById("json-bns-head");
 const bnsResultsBody = document.getElementById("json-bns-body");
+const nsbhResultsHead = document.getElementById("json-nsbh-head");
 const nsbhResultsBody = document.getElementById("json-nsbh-body");
+const bnsJsonDownload = document.getElementById("bns-json-download");
+const nsbhJsonDownload = document.getElementById("nsbh-json-download");
 
 function normalizeApiBase(rawBase) {
   return (rawBase || "").trim().replace(/\/+$/, "");
@@ -70,6 +74,10 @@ function sanitizeDisplayText(value) {
   }
 
   return String(value).replace(/\/Users\/[^\s"'`]+/g, (token) => shortenAbsolutePath(token));
+}
+
+function normalizeDecimalString(rawValue) {
+  return String(rawValue ?? "").trim().replace(/,/g, ".");
 }
 
 function tokenizeCommand(commandLine) {
@@ -130,9 +138,43 @@ function isCommandEchoLine(line) {
   return /targ_ac_git\.targ_range_snr_mf|--output-dir|--cache-dir/.test(line);
 }
 
+function isDownloadProgressLine(line) {
+  return /\d{1,3}%\[/.test(line);
+}
+
+function isDownloadNoiseLine(line) {
+  return (
+    /--\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}--/.test(line) ||
+    /Resolving\s+gwosc\.org/.test(line) ||
+    /Connecting\s+to\s+gwosc\.org/.test(line) ||
+    /HTTP request sent, awaiting response/.test(line) ||
+    /Length:\s+\d+/.test(line) ||
+    /Saving to:\s+/.test(line)
+  );
+}
+
+function extractProgressPercent(line) {
+  const matches = [...line.matchAll(/(\d{1,3})%\[/g)];
+  if (matches.length === 0) {
+    return null;
+  }
+
+  let maxPercent = null;
+  for (const match of matches) {
+    const percent = Number(match[1]);
+    if (!Number.isFinite(percent)) {
+      continue;
+    }
+    maxPercent = maxPercent === null ? percent : Math.max(maxPercent, percent);
+  }
+
+  return maxPercent;
+}
+
 function sanitizeLogLines(logTail, commandLine) {
   const cleanLines = [];
   const summary = buildInputSummary(commandLine);
+  let latestDownloadProgress = null;
 
   if (summary) {
     cleanLines.push(summary);
@@ -143,10 +185,29 @@ function sanitizeLogLines(logTail, commandLine) {
     if (!line.trim()) {
       continue;
     }
+
     if (isCommandEchoLine(line)) {
       continue;
     }
+
+    if (isDownloadProgressLine(line)) {
+      const progressPercent = extractProgressPercent(line);
+      if (progressPercent !== null) {
+        latestDownloadProgress = progressPercent;
+      }
+      continue;
+    }
+
+    if (isDownloadNoiseLine(line)) {
+      continue;
+    }
+
     cleanLines.push(line);
+  }
+
+  const runFinished = cleanLines.some((line) => /ANALYSIS COMPLETE|DONE in|completed analysis/i.test(line));
+  if (latestDownloadProgress !== null && !runFinished) {
+    cleanLines.push(`GWOSC download progress: ${latestDownloadProgress}%`);
   }
 
   return cleanLines.length > 0 ? cleanLines : ["No log lines yet."];
@@ -186,14 +247,28 @@ function applyLocalizationMode() {
 }
 
 function parseOptionalFloat(inputEl) {
-  const raw = inputEl.value.trim();
+  const raw = normalizeDecimalString(inputEl.value);
+  inputEl.value = raw;
+
   if (raw === "") {
     return null;
   }
 
   const value = Number(raw);
   if (!Number.isFinite(value)) {
-    throw new Error(`Invalid number: ${raw}`);
+    throw new Error(`Invalid number: ${raw}. Use "." as decimal separator`);
+  }
+
+  return value;
+}
+
+function parseRequiredFloat(inputEl, fieldLabel) {
+  const raw = normalizeDecimalString(inputEl.value);
+  inputEl.value = raw;
+
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    throw new Error(`${fieldLabel} must be a valid number. Use "." as decimal separator`);
   }
 
   return value;
@@ -205,14 +280,60 @@ function clearTableBody(tbody) {
   }
 }
 
-function addInfoRow(tbody, text, cssClass = "empty-row") {
+function addInfoRow(tbody, text, cssClass = "empty-row", colSpan = 2) {
   const row = document.createElement("tr");
   const cell = document.createElement("td");
-  cell.colSpan = 4;
+  cell.colSpan = Math.max(1, colSpan);
   cell.className = cssClass;
   cell.textContent = sanitizeDisplayText(text);
   row.appendChild(cell);
   tbody.appendChild(row);
+}
+
+function renderResultsHeader(thead, angleColumns) {
+  if (!thead) {
+    return;
+  }
+
+  thead.innerHTML = "";
+
+  const columns = Array.isArray(angleColumns) && angleColumns.length > 0 ? angleColumns : ["-"];
+  const row = document.createElement("tr");
+
+  const massHeader = document.createElement("th");
+  massHeader.textContent = "Mass Combination";
+  row.appendChild(massHeader);
+
+  for (const label of columns) {
+    const header = document.createElement("th");
+    header.textContent = label === "-" ? "D90 (Mpc)" : `D90 ${label} deg (Mpc)`;
+    row.appendChild(header);
+  }
+
+  thead.appendChild(row);
+}
+
+function resetJsonDownloadLink(linkEl) {
+  if (!linkEl) {
+    return;
+  }
+
+  linkEl.hidden = true;
+  linkEl.removeAttribute("href");
+}
+
+function setJsonDownloadLink(linkEl, artifact) {
+  if (!linkEl) {
+    return;
+  }
+
+  if (!artifact) {
+    resetJsonDownloadLink(linkEl);
+    return;
+  }
+
+  linkEl.href = artifactDownloadUrl(artifact);
+  linkEl.hidden = false;
 }
 
 function clearArtifacts() {
@@ -223,6 +344,11 @@ function clearArtifacts() {
   ifosLine.hidden = true;
   ifosOnline.textContent = "-";
   resultsAngleNote.textContent = "";
+
+  resetJsonDownloadLink(bnsJsonDownload);
+  resetJsonDownloadLink(nsbhJsonDownload);
+  renderResultsHeader(bnsResultsHead, ["-"]);
+  renderResultsHeader(nsbhResultsHead, ["-"]);
 }
 
 function validateFitsFile(file) {
@@ -239,7 +365,7 @@ function validateFitsFile(file) {
 function buildRequestData() {
   const transientName = transientNameInput.value.trim();
   const t0 = t0Input.value.trim();
-  const snrThreshold = Number(snrThresholdInput.value);
+  const snrThreshold = parseRequiredFloat(snrThresholdInput, "SNR threshold");
 
   if (!transientName) {
     throw new Error("Transient name is required");
@@ -268,8 +394,8 @@ function buildRequestData() {
   }
 
   if (getLocalizationMode() === "coords") {
-    const ra = Number(raInput.value);
-    const dec = Number(decInput.value);
+    const ra = parseRequiredFloat(raInput, "RA");
+    const dec = parseRequiredFloat(decInput, "DEC");
 
     if (!Number.isFinite(ra) || !Number.isFinite(dec)) {
       throw new Error("RA and DEC must be valid numbers");
@@ -421,42 +547,99 @@ function extractTdrRows(resultsJson, sourceKey) {
   return rows;
 }
 
-function renderResultRows(tbody, rows, downloadUrl) {
+function normalizeIotaLabel(rawLabel) {
+  if (!rawLabel || rawLabel === "-") {
+    return "-";
+  }
+
+  const compact = String(rawLabel).trim().replace(/\s+/g, "");
+  const match = compact.match(/^([0-9.]+)-([0-9.]+)$/);
+  if (!match) {
+    return compact;
+  }
+
+  return `${formatNumber(Number(match[1]), 1)}-${formatNumber(Number(match[2]), 1)}`;
+}
+
+function pickDisplayAngleColumns(rows) {
+  const labels = Array.from(
+    new Set(
+      rows
+        .map((row) => normalizeIotaLabel(row.iotaLabel))
+        .filter((label) => label && label !== "-"),
+    ),
+  ).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  const isDefault = labels.length === 2 && labels.includes("0-45") && labels.includes("0-90");
+  if (isDefault) {
+    return ["0-45", "0-90"];
+  }
+
+  if (labels.length === 0) {
+    return [];
+  }
+
+  return [labels[0]];
+}
+
+function pivotRowsByMass(rows) {
+  const matrix = new Map();
+
+  for (const row of rows) {
+    const mass = sanitizeDisplayText(row.mass || "-");
+    const label = normalizeIotaLabel(row.iotaLabel);
+    const d90 = sanitizeDisplayText(row.d90 || "-");
+
+    if (!matrix.has(mass)) {
+      matrix.set(mass, new Map());
+    }
+
+    matrix.get(mass).set(label, d90);
+  }
+
+  return matrix;
+}
+
+function renderResultRows(thead, tbody, rows) {
   clearTableBody(tbody);
 
+  const displayColumns = pickDisplayAngleColumns(rows);
+  const headerColumns = displayColumns.length > 0 ? displayColumns : ["-"];
+  renderResultsHeader(thead, headerColumns);
+
   if (rows.length === 0) {
-    addInfoRow(tbody, "No rows available.");
+    addInfoRow(tbody, "No rows available.", "empty-row", 1 + headerColumns.length);
     return;
   }
 
-  for (const rowData of rows) {
+  const matrix = pivotRowsByMass(rows);
+  const masses = Array.from(matrix.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  for (const mass of masses) {
     const row = document.createElement("tr");
 
     const massCell = document.createElement("td");
-    massCell.textContent = sanitizeDisplayText(rowData.mass);
+    massCell.textContent = mass;
+    row.appendChild(massCell);
 
-    const iotaCell = document.createElement("td");
-    iotaCell.textContent = sanitizeDisplayText(rowData.iotaLabel);
+    const values = matrix.get(mass) || new Map();
 
-    const d90Cell = document.createElement("td");
-    d90Cell.textContent = sanitizeDisplayText(rowData.d90);
+    for (const columnLabel of headerColumns) {
+      const valueCell = document.createElement("td");
+      let value = values.get(columnLabel);
 
-    const downloadCell = document.createElement("td");
-    if (downloadUrl) {
-      const downloadLink = document.createElement("a");
-      downloadLink.href = downloadUrl;
-      downloadLink.target = "_blank";
-      downloadLink.rel = "noopener noreferrer";
-      downloadLink.textContent = "Download";
-      downloadCell.appendChild(downloadLink);
-    } else {
-      downloadCell.textContent = "-";
+      if (value === undefined && columnLabel === "-") {
+        value = values.get("-") || Array.from(values.values())[0] || "-";
+      }
+
+      if (value === undefined && headerColumns.length === 1 && columnLabel !== "-") {
+        value = Array.from(values.values())[0] || "-";
+      }
+
+      valueCell.textContent = sanitizeDisplayText(value === undefined ? "-" : value);
+      row.appendChild(valueCell);
     }
 
-    row.appendChild(massCell);
-    row.appendChild(iotaCell);
-    row.appendChild(d90Cell);
-    row.appendChild(downloadCell);
     tbody.appendChild(row);
   }
 }
@@ -604,6 +787,9 @@ async function renderResultsTables(jsonFiles) {
   const bnsArtifact = findJsonArtifact(jsonFiles, "results_bns.json");
   const nsbhArtifact = findJsonArtifact(jsonFiles, "results_nsbh.json");
 
+  setJsonDownloadLink(bnsJsonDownload, bnsArtifact);
+  setJsonDownloadLink(nsbhJsonDownload, nsbhArtifact);
+
   const [ifosPayload, bnsPayload, nsbhPayload] = await Promise.all([
     fetchJsonArtifact(ifosArtifact),
     fetchJsonArtifact(bnsArtifact),
@@ -618,22 +804,26 @@ async function renderResultsTables(jsonFiles) {
 
   let bnsRows = [];
   if (!bnsArtifact) {
-    addInfoRow(bnsResultsBody, "results_bns.json not found.");
+    renderResultsHeader(bnsResultsHead, ["-"]);
+    addInfoRow(bnsResultsBody, "results_bns.json not found.", "empty-row", 2);
   } else if (bnsPayload.error) {
-    addInfoRow(bnsResultsBody, `Unable to read results_bns.json: ${bnsPayload.error}`);
+    renderResultsHeader(bnsResultsHead, ["-"]);
+    addInfoRow(bnsResultsBody, `Unable to read results_bns.json: ${bnsPayload.error}`, "empty-row", 2);
   } else {
     bnsRows = extractTdrRows(bnsPayload.data, "bns");
-    renderResultRows(bnsResultsBody, bnsRows, artifactDownloadUrl(bnsArtifact));
+    renderResultRows(bnsResultsHead, bnsResultsBody, bnsRows);
   }
 
   let nsbhRows = [];
   if (!nsbhArtifact) {
-    addInfoRow(nsbhResultsBody, "results_nsbh.json not found.");
+    renderResultsHeader(nsbhResultsHead, ["-"]);
+    addInfoRow(nsbhResultsBody, "results_nsbh.json not found.", "empty-row", 2);
   } else if (nsbhPayload.error) {
-    addInfoRow(nsbhResultsBody, `Unable to read results_nsbh.json: ${nsbhPayload.error}`);
+    renderResultsHeader(nsbhResultsHead, ["-"]);
+    addInfoRow(nsbhResultsBody, `Unable to read results_nsbh.json: ${nsbhPayload.error}`, "empty-row", 2);
   } else {
     nsbhRows = extractTdrRows(nsbhPayload.data, "nsbh");
-    renderResultRows(nsbhResultsBody, nsbhRows, artifactDownloadUrl(nsbhArtifact));
+    renderResultRows(nsbhResultsHead, nsbhResultsBody, nsbhRows);
   }
 
   updateAngleNote(bnsRows, nsbhRows);
@@ -769,6 +959,15 @@ async function cancelJob() {
 }
 
 function initialize() {
+  const decimalInputs = [snrThresholdInput, iotaMinInput, iotaMaxInput, raInput, decInput];
+  for (const inputEl of decimalInputs) {
+    inputEl.addEventListener("input", () => {
+      if (inputEl.value.includes(",")) {
+        inputEl.value = inputEl.value.replace(/,/g, ".");
+      }
+    });
+  }
+
   for (const radio of document.querySelectorAll("input[name='localization-mode']")) {
     radio.addEventListener("change", applyLocalizationMode);
   }

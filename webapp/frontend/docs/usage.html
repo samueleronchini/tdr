@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GW TDR Docs - Usage</title>
+  <meta name="description" content="Usage guide and GW170817 example for GW targeted detectability range.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="./">GW TDR Docs</a>
+    <nav class="toplinks" aria-label="top links">
+      <a href="./">Intro</a>
+      <a href="./installation.html">Installation</a>
+      <a class="active" href="./usage.html">Usage and example of use</a>
+      <a href="../">Web Runner</a>
+      <a href="https://gw-tdr.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer">ReadTheDocs</a>
+      <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <p class="eyebrow">Usage and example of use</p>
+      <h1>Run the tool and inspect outputs</h1>
+      <p>
+        This page shows command usage plus a full worked example for GW170817,
+        including all generated plots and the final default-angle tables (0-45 and 0-90 deg).
+      </p>
+      <div class="hero-actions">
+        <a class="btn primary" href="#example">Jump to GW170817 example</a>
+        <a class="btn" href="#plots">Jump to plots</a>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="toc" aria-label="Table of contents">
+        <h2>On this page</h2>
+        <a href="#basic">Basic command</a>
+        <a href="#required">Required inputs</a>
+        <a href="#options">Command options</a>
+        <a href="#example">Example: GW170817</a>
+        <a href="#plots">All returned plots</a>
+        <a href="#tables">Results tables</a>
+        <a href="#outputs">Output structure</a>
+      </aside>
+
+      <article class="content">
+        <section id="basic" class="card">
+          <h2>Basic command</h2>
+          <div class="codeblock">
+            <button class="copy-btn" data-copy-target="basic-cmd" type="button">Copy</button>
+<pre id="basic-cmd"><code>tdr --output-dir &lt;output_directory&gt; --t0 &lt;trigger_time&gt; [options]</code></pre>
+          </div>
+        </section>
+
+        <section id="required" class="card">
+          <h2>Required inputs</h2>
+          <ul>
+            <li><code>--output-dir</code>: directory where outputs are written.</li>
+            <li><code>--t0</code>: trigger time in GPS seconds or ISO UTC.</li>
+            <li>Localization input: either <code>--ra</code>/<code>--dec</code> or <code>--skymap-file</code>.</li>
+          </ul>
+        </section>
+
+        <section id="options" class="card">
+          <h2>Command options</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Option</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>--ra</code>, <code>--dec</code></td>
+                  <td>Localization coordinates in degrees.</td>
+                </tr>
+                <tr>
+                  <td><code>--skymap-file</code></td>
+                  <td>HEALPix FITS localization sky map.</td>
+                </tr>
+                <tr>
+                  <td><code>--iota-min</code>, <code>--iota-max</code></td>
+                  <td>Custom inclination range. If omitted, defaults are 0-45 and 0-90 deg.</td>
+                </tr>
+                <tr>
+                  <td><code>--snr-threshold</code></td>
+                  <td>Detection threshold used for D90 (default 8.5).</td>
+                </tr>
+                <tr>
+                  <td><code>--snr-type</code></td>
+                  <td><code>mf</code> (matched-filter-like) or <code>opt</code> (optimal).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="example" class="card">
+          <h2>Example of use: GW170817</h2>
+          <p>
+            Temporary example run using:
+            <code>examples/glg_healpix_all_bn200326517_v00.fit</code>
+            (the dedicated final GW170817 map can be swapped in later without changing page structure).
+          </p>
+
+          <div class="codeblock">
+            <button class="copy-btn" data-copy-target="gw170817-cmd" type="button">Copy</button>
+<pre id="gw170817-cmd"><code>tdr \
+  --output-dir /Users/sjs8171/Desktop/gw_tdr_results/GW170817_TEMP \
+  --t0 2017-08-17T12:41:04.444 \
+  --skymap-file /Users/sjs8171/Desktop/gw_tdr/examples/glg_healpix_all_bn200326517_v00.fit \
+  --snr-threshold 8.5 \
+  --snr-type mf</code></pre>
+          </div>
+
+          <p><strong>Detected IFOs:</strong> H1, L1, V1.</p>
+          <p><strong>Default iota ranges:</strong> 0-45 deg and 0-90 deg.</p>
+        </section>
+
+        <section id="plots" class="card">
+          <h2>All plots returned by the code</h2>
+
+          <div class="doc-plots-grid">
+            <article class="doc-plot-card">
+              <h3>psd_plot.pdf</h3>
+              <div class="doc-plot-frame-wrap">
+                <iframe class="doc-plot-frame" src="./assets/gw170817/psd_plot.pdf#view=FitH" loading="lazy" title="PSD plot"></iframe>
+              </div>
+              <div class="doc-plot-actions">
+                <a href="./assets/gw170817/psd_plot.pdf" target="_blank" rel="noopener noreferrer">Open</a>
+                <a href="./assets/gw170817/psd_plot.pdf" download>Download</a>
+              </div>
+            </article>
+
+            <article class="doc-plot-card">
+              <h3>bns_targeted_range.pdf</h3>
+              <div class="doc-plot-frame-wrap">
+                <iframe class="doc-plot-frame" src="./assets/gw170817/bns_targeted_range.pdf#view=FitH" loading="lazy" title="BNS targeted range"></iframe>
+              </div>
+              <div class="doc-plot-actions">
+                <a href="./assets/gw170817/bns_targeted_range.pdf" target="_blank" rel="noopener noreferrer">Open</a>
+                <a href="./assets/gw170817/bns_targeted_range.pdf" download>Download</a>
+              </div>
+            </article>
+
+            <article class="doc-plot-card">
+              <h3>nsbh_targeted_range.pdf</h3>
+              <div class="doc-plot-frame-wrap">
+                <iframe class="doc-plot-frame" src="./assets/gw170817/nsbh_targeted_range.pdf#view=FitH" loading="lazy" title="NSBH targeted range"></iframe>
+              </div>
+              <div class="doc-plot-actions">
+                <a href="./assets/gw170817/nsbh_targeted_range.pdf" target="_blank" rel="noopener noreferrer">Open</a>
+                <a href="./assets/gw170817/nsbh_targeted_range.pdf" download>Download</a>
+              </div>
+            </article>
+
+            <article class="doc-plot-card">
+              <h3>range_map_bns_m1_1.4_m2_1.4.pdf</h3>
+              <div class="doc-plot-frame-wrap">
+                <iframe class="doc-plot-frame" src="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.pdf#view=FitH" loading="lazy" title="Range map BNS"></iframe>
+              </div>
+              <div class="doc-plot-actions">
+                <a href="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.pdf" target="_blank" rel="noopener noreferrer">Open</a>
+                <a href="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.pdf" download>Download</a>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section id="tables" class="card">
+          <h2>Results tables (default 0-45 and 0-90 deg)</h2>
+
+          <h3 class="results-headline">
+            <span>BNS (results_bns.json)</span>
+            <a class="results-json-link" href="./assets/gw170817/results_bns.json" download>Download JSON</a>
+          </h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mass Combination</th>
+                  <th>D90 0-45 deg (Mpc)</th>
+                  <th>D90 0-90 deg (Mpc)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>m1=1, m2=1</td><td>117.587</td><td>53.155</td></tr>
+                <tr><td>m1=1.4, m2=1.4</td><td>155.757</td><td>68.517</td></tr>
+                <tr><td>m1=2.0, m2=2.0</td><td>208.439</td><td>89.073</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="results-headline">
+            <span>NSBH (results_nsbh.json)</span>
+            <a class="results-json-link" href="./assets/gw170817/results_nsbh.json" download>Download JSON</a>
+          </h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mass Combination</th>
+                  <th>D90 0-45 deg (Mpc)</th>
+                  <th>D90 0-90 deg (Mpc)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>m1=5, m2=1</td><td>209.507</td><td>90.065</td></tr>
+                <tr><td>m1=10, m2=1.4</td><td>316.152</td><td>133.394</td></tr>
+                <tr><td>m1=20, m2=2.0</td><td>489.854</td><td>204.744</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="outputs" class="card">
+          <h2>Output structure</h2>
+          <div class="codeblock">
+<pre><code>&lt;output-dir&gt;/
+|-- targ_range.log
+|-- ifos_used.txt
+|-- ifos_used.json
+|-- gwosc_cache/
+|-- inj/
+|-- results/
+|-- h1_psd.txt
+|-- l1_psd.txt
+|-- v1_psd.txt
+|-- psd_plot.pdf
+|-- bns_targeted_range.pdf
+|-- nsbh_targeted_range.pdf
+|-- range_map_bns_m1_1.4_m2_1.4.fits
+|-- range_map_bns_m1_1.4_m2_1.4.pdf
+|-- results_bns.json
+`-- results_nsbh.json</code></pre>
+          </div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const targetId = btn.getAttribute('data-copy-target');
+        const target = document.getElementById(targetId);
+        if (!target) return;
+
+        try {
+          await navigator.clipboard.writeText(target.innerText);
+          const oldText = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(() => {
+            btn.textContent = oldText;
+          }, 1200);
+        } catch (_err) {
+          btn.textContent = 'Copy failed';
+          setTimeout(() => {
+            btn.textContent = 'Copy';
+          }, 1200);
+        }
+      });
+    });
+
+    const tocLinks = Array.from(document.querySelectorAll('.toc a'));
+    const sections = tocLinks
+      .map((a) => a.getAttribute('href'))
+      .filter(Boolean)
+      .map((id) => document.querySelector(id))
+      .filter(Boolean);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const id = `#${entry.target.id}`;
+          tocLinks.forEach((link) => {
+            link.classList.toggle('active', link.getAttribute('href') === id);
+          });
+        });
+      },
+      { rootMargin: '-45% 0px -45% 0px', threshold: 0.01 },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+  </script>
+</body>
+</html>

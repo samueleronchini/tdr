@@ -1,0 +1,67 @@
+{
+    "bns": {
+        "m1=1, m2=1": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 117.58656019359074
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 53.155073005540466
+                }
+            }
+        },
+        "m1=1.4, m2=1.4": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 155.7571938279317
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 68.51664283933827
+                }
+            }
+        },
+        "m1=2.0, m2=2.0": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 208.43862247939984
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 89.07321781637935
+                }
+            }
+        }
+    }
+}

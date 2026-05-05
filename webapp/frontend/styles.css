@@ -336,6 +336,24 @@ button:disabled {
   margin: 0.7rem 0 0.35rem;
   font-size: 0.9rem;
   color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.json-download {
+  font-size: 0.78rem;
+  text-decoration: none;
+  color: var(--primary-dark);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  background: #fff;
+}
+
+.json-download:hover {
+  text-decoration: underline;
 }
 
 .plots-grid {
@@ -418,6 +436,11 @@ button:disabled {
   padding: 0.5rem 0.35rem;
   text-align: left;
   vertical-align: top;
+}
+
+.artifact-table th:not(:first-child),
+.artifact-table td:not(:first-child) {
+  text-align: center;
 }
 
 .artifact-table th {
