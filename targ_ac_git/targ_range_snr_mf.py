@@ -178,7 +178,9 @@ def load_strain_segments(run_cfg, t_center, cache_dir, output_dir, logger):
 def build_psds(strain_segments, t_center, output_dir, ifo_status, logger):
     psd_list, psd_ifos, temp_files = [], [], []
 
-    for ifo, seg in strain_segments.items():
+    # Keep PSD objects and IFO labels in the same deterministic order.
+    for ifo in sorted(strain_segments.keys()):
+        seg = strain_segments[ifo]
         logger.info(f"{os.path.basename(output_dir)}: starting PSD for {ifo}")
         start = time.time()
 
@@ -202,7 +204,7 @@ def build_psds(strain_segments, t_center, output_dir, ifo_status, logger):
             ifo_status[ifo]["reason"] = f"PSD failed: {e}"
             logger.info(f"{os.path.basename(output_dir)}: PSD failed for {ifo}: {e} in {time.time() - start:.2f} s")
 
-    return psd_list, sorted(psd_ifos), temp_files
+    return psd_list, psd_ifos, temp_files
 
 
 def run_pycbc_optimal_snr(inj_file, res_file, online_ifos, output_dir):
