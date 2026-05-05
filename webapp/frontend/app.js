@@ -447,7 +447,15 @@ function buildRequestData() {
 }
 
 function artifactPreviewUrl(artifact) {
-  return buildApiUrl(artifact.url);
+  const baseUrl = buildApiUrl(artifact.url);
+  const versionToken = Number(artifact?.size_bytes);
+
+  if (!Number.isFinite(versionToken) || versionToken <= 0) {
+    return baseUrl;
+  }
+
+  const separator = baseUrl.includes("?") ? "&" : "?";
+  return `${baseUrl}${separator}v=${versionToken}`;
 }
 
 function artifactDownloadUrl(artifact) {
@@ -711,38 +719,6 @@ function updateAngleNote(bnsRows, nsbhRows) {
   }
 }
 
-async function getPdfAspectRatio(url) {
-  try {
-    const response = await fetch(url, { cache: "force-cache" });
-    if (!response.ok) {
-      return null;
-    }
-
-    const bytes = await response.arrayBuffer();
-    const scanLimit = Math.min(bytes.byteLength, 600000);
-    const text = new TextDecoder("latin1").decode(bytes.slice(0, scanLimit));
-    const match = text.match(/\/MediaBox\s*\[\s*([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s*\]/);
-    if (!match) {
-      return null;
-    }
-
-    const x0 = Number(match[1]);
-    const y0 = Number(match[2]);
-    const x1 = Number(match[3]);
-    const y1 = Number(match[4]);
-    const width = Math.abs(x1 - x0);
-    const height = Math.abs(y1 - y0);
-
-    if (!Number.isFinite(width) || !Number.isFinite(height) || height === 0) {
-      return null;
-    }
-
-    return width / height;
-  } catch (_err) {
-    return null;
-  }
-}
-
 function buildPlotDisplayTitle(artifact) {
   const rawName = (artifact?.name || "").toLowerCase();
 
@@ -769,6 +745,28 @@ function buildPlotDisplayTitle(artifact) {
   return sanitizeDisplayText(artifact?.relative_path || artifact?.name || "Plot");
 }
 
+function isPreviewImageArtifact(artifact) {
+  const name = String(artifact?.name || "").toLowerCase();
+  return name.endsWith("_preview.png");
+}
+
+function buildPdfPreviewMap(plotFiles) {
+  const map = new Map();
+
+  for (const artifact of plotFiles || []) {
+    if (!isPreviewImageArtifact(artifact)) {
+      continue;
+    }
+
+    const key = String(artifact.relative_path || "").replace(/_preview\.png$/i, ".pdf");
+    if (key) {
+      map.set(key, artifact);
+    }
+  }
+
+  return map;
+}
+
 async function renderPlotCards(plotFiles) {
   plotsGallery.innerHTML = "";
 
@@ -780,7 +778,10 @@ async function renderPlotCards(plotFiles) {
     return;
   }
 
-  for (const artifact of plotFiles) {
+  const pdfPreviewMap = buildPdfPreviewMap(plotFiles);
+  const primaryArtifacts = plotFiles.filter((artifact) => !isPreviewImageArtifact(artifact));
+
+  for (const artifact of primaryArtifacts) {
     const card = document.createElement("article");
     card.className = "plot-card";
 
@@ -790,30 +791,22 @@ async function renderPlotCards(plotFiles) {
 
     const url = artifactPreviewUrl(artifact);
     const downloadUrl = artifactDownloadUrl(artifact);
-    const ext = (artifact.name || "").toLowerCase();
+    const ext = String(artifact.name || "").toLowerCase();
+    const isPdf = ext.endsWith(".pdf");
+    const previewArtifact = isPdf ? pdfPreviewMap.get(String(artifact.relative_path || "")) : artifact;
 
-    if (ext.endsWith(".pdf")) {
-      const frameWrap = document.createElement("div");
-      frameWrap.className = "plot-frame-wrap";
-
-      const ratio = await getPdfAspectRatio(url);
-      if (ratio && Number.isFinite(ratio) && ratio > 0) {
-        frameWrap.style.aspectRatio = String(ratio);
-      }
-
-      const frame = document.createElement("iframe");
-      frame.className = "plot-frame";
-      frame.src = `${url}#view=FitH`;
-      frame.loading = "lazy";
-      frameWrap.appendChild(frame);
-      card.appendChild(frameWrap);
-    } else {
+    if (previewArtifact) {
       const img = document.createElement("img");
       img.className = "plot-image";
-      img.src = url;
+      img.src = artifactPreviewUrl(previewArtifact);
       img.alt = sanitizeDisplayText(artifact.relative_path);
       img.loading = "lazy";
       card.appendChild(img);
+    } else {
+      const placeholder = document.createElement("div");
+      placeholder.className = "plot-preview-empty";
+      placeholder.textContent = "Preview image not available.";
+      card.appendChild(placeholder);
     }
 
     const actionBox = document.createElement("div");

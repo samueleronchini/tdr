@@ -4,8 +4,10 @@ import mimetypes
 import os
 import re
 import shlex
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import uuid
 from collections import deque
@@ -34,6 +36,7 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 PLOT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".svg"}
 JSON_EXTENSIONS = {".json"}
 FIT_EXTENSIONS = {".fit", ".fits"}
+PDF_PREVIEW_SUFFIX = "_preview.png"
 
 
 def _utc_now() -> str:
@@ -182,12 +185,133 @@ def _validate_request_input(request: JobInput) -> None:
         raise HTTPException(status_code=400, detail="Provide both iota_min and iota_max, or neither")
 
 
+def _preview_path_for_pdf(pdf_path: Path) -> Path:
+    return pdf_path.with_name(f"{pdf_path.stem}{PDF_PREVIEW_SUFFIX}")
+
+
+def _read_png_size(png_path: Path) -> tuple[Optional[int], Optional[int]]:
+    try:
+        with png_path.open("rb") as handle:
+            header = handle.read(24)
+    except OSError:
+        return None, None
+
+    if len(header) < 24 or header[:8] != b"\x89PNG\r\n\x1a\n":
+        return None, None
+
+    width = int.from_bytes(header[16:20], "big")
+    height = int.from_bytes(header[20:24], "big")
+    return width, height
+
+
+def _convert_pdf_preview_with_sips(pdf_path: Path, preview_path: Path) -> bool:
+    if shutil.which("sips") is None:
+        return False
+
+    try:
+        subprocess.run(
+            ["sips", "-s", "format", "png", str(pdf_path), "--out", str(preview_path)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return False
+
+    return preview_path.exists() and preview_path.stat().st_size > 0
+
+
+def _convert_pdf_preview_with_qlmanage(pdf_path: Path, preview_path: Path) -> bool:
+    if shutil.which("qlmanage") is None:
+        return False
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="tdr_pdf_preview_") as tmp_dir:
+            tmp_dir_path = Path(tmp_dir)
+            subprocess.run(
+                ["qlmanage", "-t", "-s", "2400", "-o", str(tmp_dir_path), str(pdf_path)],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+
+            candidate = tmp_dir_path / f"{pdf_path.name}.png"
+            if not candidate.exists() or candidate.stat().st_size == 0:
+                return False
+
+            preview_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(candidate), str(preview_path))
+    except Exception:
+        return False
+
+    return preview_path.exists() and preview_path.stat().st_size > 0
+
+
+def _convert_pdf_preview_with_pdftoppm(pdf_path: Path, preview_path: Path) -> bool:
+    if shutil.which("pdftoppm") is None:
+        return False
+
+    output_prefix = preview_path.with_suffix("")
+    try:
+        subprocess.run(
+            ["pdftoppm", "-f", "1", "-singlefile", "-png", str(pdf_path), str(output_prefix)],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return False
+
+    return preview_path.exists() and preview_path.stat().st_size > 0
+
+
+def _ensure_pdf_previews(output_dir: Path) -> None:
+    if not output_dir.exists():
+        return
+
+    for pdf_path in sorted(output_dir.rglob("*.pdf")):
+        if not pdf_path.is_file():
+            continue
+
+        preview_path = _preview_path_for_pdf(pdf_path)
+        preview_missing = not preview_path.exists()
+        preview_stale = False
+        preview_low_res = False
+
+        if not preview_missing:
+            preview_stale = preview_path.stat().st_mtime < pdf_path.stat().st_mtime
+            width, _height = _read_png_size(preview_path)
+            preview_low_res = width is None or width < 1600
+
+        needs_update = preview_missing or preview_stale or preview_low_res
+        if not needs_update:
+            continue
+
+        try:
+            preview_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+        converted = (
+            _convert_pdf_preview_with_qlmanage(pdf_path, preview_path)
+            or _convert_pdf_preview_with_sips(pdf_path, preview_path)
+            or _convert_pdf_preview_with_pdftoppm(pdf_path, preview_path)
+        )
+        if not converted:
+            try:
+                preview_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
 def _collect_artifacts(output_dir: Path, job_id: str) -> tuple[List[ArtifactItem], List[ArtifactItem]]:
     plot_files: List[ArtifactItem] = []
     json_files: List[ArtifactItem] = []
 
     if not output_dir.exists():
         return plot_files, json_files
+
+    _ensure_pdf_previews(output_dir)
 
     for file_path in sorted(output_dir.rglob("*")):
         if not file_path.is_file():

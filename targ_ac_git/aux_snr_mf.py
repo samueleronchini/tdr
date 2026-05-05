@@ -152,7 +152,7 @@ def plot_psd(psd_list, output_dir, ifos=None):
     pp.title("Power Spectral Densities")
     pp.xlabel("Frequency (Hz)")
     pp.ylabel("PSD")
-    pp.xlim(10, 5000)
+    pp.xlim(10, 1100)
     pp.ylim(1e-50, 1e-36)
     pp.tight_layout()
     pp.savefig(os.path.join(output_dir, "psd_plot.pdf"))

@@ -129,7 +129,7 @@
             <article class="doc-plot-card">
               <h3>psd_plot.pdf</h3>
               <div class="doc-plot-frame-wrap">
-                <iframe class="doc-plot-frame" src="./assets/gw170817/psd_plot.pdf#view=FitH" loading="lazy" title="PSD plot"></iframe>
+                <img class="doc-plot-image" src="./assets/gw170817/psd_plot.png?v=20260505hr" loading="lazy" alt="PSD plot" />
               </div>
               <div class="doc-plot-actions">
                 <a href="./assets/gw170817/psd_plot.pdf" target="_blank" rel="noopener noreferrer">Open</a>
@@ -140,7 +140,7 @@
             <article class="doc-plot-card">
               <h3>bns_targeted_range.pdf</h3>
               <div class="doc-plot-frame-wrap">
-                <iframe class="doc-plot-frame" src="./assets/gw170817/bns_targeted_range.pdf#view=FitH" loading="lazy" title="BNS targeted range"></iframe>
+                <img class="doc-plot-image" src="./assets/gw170817/bns_targeted_range.png?v=20260505hr" loading="lazy" alt="BNS targeted range" />
               </div>
               <div class="doc-plot-actions">
                 <a href="./assets/gw170817/bns_targeted_range.pdf" target="_blank" rel="noopener noreferrer">Open</a>
@@ -151,7 +151,7 @@
             <article class="doc-plot-card">
               <h3>nsbh_targeted_range.pdf</h3>
               <div class="doc-plot-frame-wrap">
-                <iframe class="doc-plot-frame" src="./assets/gw170817/nsbh_targeted_range.pdf#view=FitH" loading="lazy" title="NSBH targeted range"></iframe>
+                <img class="doc-plot-image" src="./assets/gw170817/nsbh_targeted_range.png?v=20260505hr" loading="lazy" alt="NSBH targeted range" />
               </div>
               <div class="doc-plot-actions">
                 <a href="./assets/gw170817/nsbh_targeted_range.pdf" target="_blank" rel="noopener noreferrer">Open</a>
@@ -162,7 +162,7 @@
             <article class="doc-plot-card">
               <h3>range_map_bns_m1_1.4_m2_1.4.pdf</h3>
               <div class="doc-plot-frame-wrap">
-                <iframe class="doc-plot-frame" src="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.pdf#view=FitH" loading="lazy" title="Range map BNS"></iframe>
+                <img class="doc-plot-image" src="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.png?v=20260505hr" loading="lazy" alt="Range map BNS" />
               </div>
               <div class="doc-plot-actions">
                 <a href="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.pdf" target="_blank" rel="noopener noreferrer">Open</a>
@@ -306,60 +306,32 @@
 
     sections.forEach((section) => observer.observe(section));
 
-    async function getPdfAspectRatio(url) {
-      try {
-        const response = await fetch(url, { cache: 'force-cache' });
-        if (!response.ok) {
-          return null;
+    function applyPlotAspectRatios() {
+      const plotImages = Array.from(document.querySelectorAll('.doc-plot-image'));
+
+      const updateWrapperRatio = (img) => {
+        if (!img || !img.naturalWidth || !img.naturalHeight) {
+          return;
         }
 
-        const bytes = await response.arrayBuffer();
-        const scanLimit = Math.min(bytes.byteLength, 600000);
-        const text = new TextDecoder('latin1').decode(bytes.slice(0, scanLimit));
-        const match = text.match(/\/MediaBox\s*\[\s*([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s*\]/);
-        if (!match) {
-          return null;
+        const wrapper = img.closest('.doc-plot-frame-wrap');
+        if (!wrapper) {
+          return;
         }
 
-        const x0 = Number(match[1]);
-        const y0 = Number(match[2]);
-        const x1 = Number(match[3]);
-        const y1 = Number(match[4]);
-        const width = Math.abs(x1 - x0);
-        const height = Math.abs(y1 - y0);
+        wrapper.style.aspectRatio = String(img.naturalWidth / img.naturalHeight);
+      };
 
-        if (!Number.isFinite(width) || !Number.isFinite(height) || height <= 0) {
-          return null;
-        }
-
-        return width / height;
-      } catch (_err) {
-        return null;
-      }
-    }
-
-    async function applyPlotAspectRatios() {
-      const plotFrames = Array.from(document.querySelectorAll('.doc-plot-frame'));
-      for (const frame of plotFrames) {
-        const src = frame.getAttribute('src') || '';
-        const pdfUrl = src.split('#')[0];
-        if (!pdfUrl.toLowerCase().endsWith('.pdf')) {
-          continue;
-        }
-
-        const ratio = await getPdfAspectRatio(pdfUrl);
-        if (!ratio || !Number.isFinite(ratio) || ratio <= 0) {
-          continue;
-        }
-
-        const wrapper = frame.closest('.doc-plot-frame-wrap');
-        if (wrapper) {
-          wrapper.style.aspectRatio = String(ratio);
+      for (const img of plotImages) {
+        if (img.complete) {
+          updateWrapperRatio(img);
+        } else {
+          img.addEventListener('load', () => updateWrapperRatio(img), { once: true });
         }
       }
     }
 
-    void applyPlotAspectRatios();
+    applyPlotAspectRatios();
   </script>
 </body>
 </html>
