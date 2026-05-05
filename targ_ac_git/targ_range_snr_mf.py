@@ -45,12 +45,12 @@ def as_gps_seconds(t0):
     return float(t0)
 
 
-def parse_snr_statistic(value):
+def parse_snr_type(value):
     if value == "mf":
         return "matched_filter"
     if value == "opt":
         return "optimal"
-    raise ValueError("snr_statistic must be either 'mf' or 'opt'")
+    raise ValueError("snr_type must be either 'mf' or 'opt'")
 
 
 def parse_iota_ranges(iota_min_deg, iota_max_deg):
@@ -248,7 +248,7 @@ def choose_localization_samples(ra, dec, skymap_file, ra_max, dec_max):
     return [ra_max], [dec_max], None
 
 
-def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_statistic):
+def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_type):
     os.makedirs(output_dir, exist_ok=True)
 
     logger = setup_logger(log_file)
@@ -289,13 +289,13 @@ def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, lo
     map_iota_max = iota_ranges[0]["iota_max"]
 
     logger.info(f"{os.path.basename(output_dir)}: starting compute_map")
-    range_map = compute_map("bns", "1.4", "1.4", online_ifos, output_dir, map_iota_min, map_iota_max, snr_threshold, snr_statistic)
+    range_map = compute_map("bns", "1.4", "1.4", online_ifos, output_dir, map_iota_min, map_iota_max, snr_threshold, snr_type)
     logger.info(f"{os.path.basename(output_dir)}: finished compute_map")
 
     ra_samples, dec_samples, skymap = choose_localization_samples(ra, dec, skymap_file, ra_max, dec_max)
 
     logger.info(f"{os.path.basename(output_dir)}: starting compute_range")
-    compute_range(ra_samples, dec_samples, online_ifos, CHIRP_MASSES, output_dir, iota_ranges, snr_threshold, snr_statistic)
+    compute_range(ra_samples, dec_samples, online_ifos, CHIRP_MASSES, output_dir, iota_ranges, snr_threshold, snr_type)
     logger.info(f"{os.path.basename(output_dir)}: finished compute_range")
 
     logger.info(f"{os.path.basename(output_dir)}: starting plot_final")
@@ -325,8 +325,8 @@ def build_parser():
     parser.add_argument("--iota-min", type=float, default=None, help="Minimum inclination angle in degrees.")
     parser.add_argument("--iota-max", type=float, default=None, help="Maximum inclination angle in degrees.")
     parser.add_argument("--snr-threshold", type=float, default=8.5, help="SNR threshold used to define D90. Default: 8.5.")
-    parser.add_argument("--snr-statistic", choices=["mf", "opt"], default="mf",
-        help="SNR statistic used to define the TDR: 'mf' for matched-filter SNR, 'opt' for optimal SNR. Default: mf.",
+    parser.add_argument("--snr-type", choices=["mf", "opt"], default="mf",
+        help="SNR type used to define the TDR: 'mf' for matched-filter SNR, 'opt' for optimal SNR. Default: mf.",
     )
 
     return parser
@@ -346,7 +346,7 @@ def targ_range(args=None):
     if snr_threshold <= 0:
         raise ValueError("--snr-threshold must be positive")
 
-    snr_statistic = parse_snr_statistic(args.snr_statistic)
+    snr_type = parse_snr_type(args.snr_type)
     iota_ranges = parse_iota_ranges(args.iota_min, args.iota_max)
 
     start_time = time.time()
@@ -363,13 +363,13 @@ def targ_range(args=None):
     logger.info(f"Input t0={args.t0}")
     logger.info(f"Input ra={args.ra}, dec={args.dec}")
     logger.info(f"Input skymap_file={args.skymap_file}")
-    logger.info(f"Input snr_statistic={snr_statistic}")
+    logger.info(f"Input snr_type={snr_type}")
     logger.info(f"Input snr_threshold={snr_threshold}")
     logger.info(f"Input iota_ranges={iota_ranges}")
 
     print(f"EVENT RUN = {event_run_cfg['name']}", flush=True)
     print(f"USING GWOSC STRAIN SAMPLE RATE: {GWOSC_SAMPLE_RATE} Hz", flush=True)
-    print(f"USING SNR STATISTIC: {snr_statistic}", flush=True)
+    print(f"USING SNR TYPE: {snr_type}", flush=True)
     print(f"USING SNR THRESHOLD: {snr_threshold:g}", flush=True)
     print("USING INCLINATION PRIOR(S):", flush=True)
 
@@ -382,7 +382,7 @@ def targ_range(args=None):
     print("RUNNING SINGLE-TRIGGER ANALYSIS", flush=True)
 
     try:
-        run_single_trigger(t0, args.output_dir, args.ra, args.dec, args.skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_statistic)
+        run_single_trigger(t0, args.output_dir, args.ra, args.dec, args.skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_type)
     except Exception as e:
         print(f"FAILED: {e}", flush=True)
         with open(os.path.join(args.output_dir, "analysis_failed.txt"), "w") as f:

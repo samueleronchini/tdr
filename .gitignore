@@ -19,3 +19,5 @@ results/
 *.png
 *.log
 wget-log*
+
+webapp/runs/

@@ -282,6 +282,7 @@ def _ensure_cached_file(url, cache_dir):
 
     if os.path.exists(path):
         if _validate_cached_hdf5(path):
+            print(f"Data {filename} already present in cache. Skipping download.", flush=True)
             return path
         os.remove(path)
 

@@ -1,4 +1,4 @@
-TDR-GRB
+TDR
 =======
 
 This repository contains a Python pipeline to estimate the Targeted Detectability Range (TDR) for compact-binary gravitational-wave signals associated with an external GRB trigger.
@@ -41,8 +41,8 @@ Prerequisites: You must have either wget or curl installed on your system to dow
 
 Create a fresh conda environment:
 
-    conda create -n TDR_grb python=3.11 pip
-    conda activate TDR_grb
+    conda create -n TDR python=3.11 pip
+    conda activate TDR
 
 Clone the repository:
 
@@ -189,12 +189,12 @@ For NSBH systems, the waveform is:
 The NSBH calculations are performed for the SFHo and DD2 equations of state. The final public results_nsbh.json reports the EOS-averaged D90.
 
 
-SNR STATISTIC
+SNR TYPE
 =============
 
 The command-line option:
 
-    --snr-statistic
+    --snr-type
 
 accepts two values:
 
@@ -206,7 +206,7 @@ accepts two values:
 
 The default is:
 
-    --snr-statistic mf
+    --snr-type mf
 
 The SNR threshold used to define D90 is set with:
 
@@ -268,7 +268,7 @@ Use this when the GRB sky position is known.
         --ra <right_ascension_deg> \
         --dec <declination_deg> \
         --snr-threshold 8.5 \
-        --snr-statistic mf
+        --snr-type mf
 
 Example:
 
@@ -278,7 +278,7 @@ Example:
         --ra 245.33 \
         --dec -21.08 \
         --snr-threshold 8.5 \
-        --snr-statistic mf
+        --snr-type mf
 
 
 Example 2: using a sky map
@@ -291,7 +291,7 @@ Use this when a HEALPix localization file is available.
         --t0 <trigger_time> \
         --skymap-file <skymap_file.fit> \
         --snr-threshold 8.5 \
-        --snr-statistic mf
+        --snr-type mf
 
 Example:
 
@@ -300,7 +300,7 @@ Example:
         --t0 2020-03-26T12:24:47.903 \
         --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
         --snr-threshold 8.5 \
-        --snr-statistic mf
+        --snr-type mf
 
 
 Example 3: custom inclination interval
@@ -320,7 +320,7 @@ To run only a custom inclination range:
         --iota-min 0 \
         --iota-max 30 \
         --snr-threshold 8.5 \
-        --snr-statistic mf
+        --snr-type mf
 
 
 NOTES

@@ -21,6 +21,10 @@ import matplotlib.pyplot as pp
 
 pp.rcdefaults()
 pp.style.use("default")
+matplotlib.rcParams['text.usetex'] = False
+matplotlib.rcParams['font.family'] = 'serif'
+matplotlib.rcParams['mathtext.fontset'] = 'cm'
+matplotlib.rcParams['font.serif'] = ['Computer Modern Roman', 'DejaVu Serif', 'serif']
 
 
 NSBH_LAMBDA2 = {
@@ -180,12 +184,12 @@ def _convert_opt_to_mf_snr(final_snr_opt, n_ifo, k_min=0.9, k_max=1.0):
     return np.sqrt(np.random.noncentral_chisquare(df=2 * n_ifo, nonc=nonc))
 
 
-def _select_snr(final_snr_opt, final_snr_mf, snr_statistic):
-    if snr_statistic == "matched_filter":
+def _select_snr(final_snr_opt, final_snr_mf, snr_type):
+    if snr_type == "matched_filter":
         return final_snr_mf
-    if snr_statistic == "optimal":
+    if snr_type == "optimal":
         return final_snr_opt
-    raise ValueError(f"Unknown snr_statistic: {snr_statistic}")
+    raise ValueError(f"Unknown snr_type: {snr_type}")
 
 
 def _fraction_curve(final_snr_ref, distances, snr_threshold):
@@ -240,7 +244,7 @@ def _read_optimal_snr_file(filename):
     return ifos, optimal_snr_data, ra_inj, dec_inj, t0
 
 
-def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, snr_threshold, snr_statistic):
+def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, snr_threshold, snr_type):
     """
     Compute TDR values and range-fraction plots for BNS and NSBH systems.
 
@@ -252,10 +256,10 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
     snr_threshold = float(snr_threshold)
     eos_list = ["SFHo", "DD2"]
 
-    if snr_statistic not in ["matched_filter", "optimal"]:
-        raise ValueError(f"Unknown snr_statistic='{snr_statistic}'. Use 'matched_filter' or 'optimal'.")
+    if snr_type not in ["matched_filter", "optimal"]:
+        raise ValueError(f"Unknown snr_type='{snr_type}'. Use 'matched_filter' or 'optimal'.")
 
-    snr_label = r"$\rho_{\rm MF}$" if snr_statistic == "matched_filter" else r"$\rho_{\rm opt}$"
+    snr_label = r"$\rho_{\rm MF}$" if snr_type == "matched_filter" else r"$\rho_{\rm opt}$"
     pol = np.random.uniform(0, 2 * np.pi, n_sample)
     iota_samples = {prior["label"]: sample_isotropic_iota(prior["iota_min"], prior["iota_max"], n_sample) for prior in iota_ranges}
     distances = np.logspace(0, np.log10(5000), 5000)
@@ -300,7 +304,7 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
                         "eos": eos,
                         "lambda2": NSBH_LAMBDA2[eos][float(m2)],
                         "chi1_min": NSBH_MIN_CHI1[eos][(float(m1), float(m2))],
-                        "snr_statistic": snr_statistic,
+                        "snr_type": snr_type,
                         "snr_threshold": snr_threshold,
                         "tdr": {},
                     }
@@ -308,7 +312,7 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
                 else:
                     results_data[cbc_type][mass_label] = {
                         "online_ifos": sorted(ifos),
-                        "snr_statistic": snr_statistic,
+                        "snr_type": snr_type,
                         "snr_threshold": snr_threshold,
                         "tdr": {},
                     }
@@ -329,7 +333,7 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
 
                     final_snr_opt = np.sqrt(np.sum(np.square(snr_distr), axis=0))
                     final_snr_mf = _convert_opt_to_mf_snr(final_snr_opt, n_ifo)
-                    final_snr_use = _select_snr(final_snr_opt, final_snr_mf, snr_statistic)
+                    final_snr_use = _select_snr(final_snr_opt, final_snr_mf, snr_type)
 
                     d90 = _compute_d90_from_snr_reference(final_snr_use, distances, snr_threshold, required_fraction)
                     result_entry["tdr"][prior_label] = {
@@ -359,7 +363,7 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
                 color = MASS_COLORS[mass_index % len(MASS_COLORS)]
                 avg_results["nsbh"][mass_label] = {
                     "online_ifos": [],
-                    "snr_statistic": snr_statistic,
+                    "snr_type": snr_type,
                     "snr_threshold": snr_threshold,
                     "eos_average": True,
                     "eos_used": eos_list,
@@ -439,7 +443,7 @@ def compute_antennamap(online_ifos, t0):
     return np.radians(np.degrees(max_phi)), np.radians(90.0 - np.degrees(max_theta))
 
 
-def compute_map(cbc_type, m1, m2, online_ifos, output_dir, iota_min, iota_max, snr_threshold, snr_statistic):
+def compute_map(cbc_type, m1, m2, online_ifos, output_dir, iota_min, iota_max, snr_threshold, snr_type):
     n_sample = 1000
     required_fraction = 0.9
     snr_threshold = float(snr_threshold)
@@ -473,7 +477,7 @@ def compute_map(cbc_type, m1, m2, online_ifos, output_dir, iota_min, iota_max, s
 
         final_snr_opt = np.sqrt(final_snr_sq)
         final_snr_mf = _convert_opt_to_mf_snr(final_snr_opt, len(ifos))
-        final_snr_use = _select_snr(final_snr_opt, final_snr_mf, snr_statistic)
+        final_snr_use = _select_snr(final_snr_opt, final_snr_mf, snr_type)
 
         detectable_distance = 100.0 * final_snr_use / snr_threshold
         critical_distance = np.partition(detectable_distance, k_idx, axis=0)[k_idx, :]
@@ -586,7 +590,7 @@ def plot_final(output_dir, range_map, skymap, samples, iota_min, iota_max):
 
     red_legend = ax.legend(handles=red_handles, loc="lower left", frameon=True, bbox_to_anchor=(-0.05, -0.22), borderaxespad=0.5, fontsize=9, handlelength=4.0, borderpad=0.4, labelspacing=0.4, handletextpad=0.8)
     ax.add_artist(red_legend)
-    ax.legend(handles=black_handles, loc="lower right", frameon=True, bbox_to_anchor=(1.05, -0.2), borderaxespad=0.5, fontsize=9, handlelength=4.5, borderpad=0.4, labelspacing=0.4, handletextpad=0.8)
+    ax.legend(handles=black_handles, loc="lower right", frameon=True, bbox_to_anchor=(1.05, -0.2), borderaxespad=0.5, fontsize=9, handlelength=4.5, borderpad=0.4, labelspacing=0.4, handletextpad=0.8, numpoints=1)
 
     sm = pp.cm.ScalarMappable(cmap=pp.cm.GnBu_r, norm=pp.Normalize(vmin=vmin, vmax=vmax))
     cbar = pp.colorbar(sm, ax=ax, shrink=1.0, orientation="horizontal", aspect=30)
