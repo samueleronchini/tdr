@@ -366,6 +366,7 @@ function buildRequestData() {
   const transientName = transientNameInput.value.trim();
   const t0 = t0Input.value.trim();
   const snrThreshold = parseRequiredFloat(snrThresholdInput, "SNR threshold");
+  const snrType = snrTypeInput.value;
 
   if (!transientName) {
     throw new Error("Transient name is required");
@@ -376,12 +377,15 @@ function buildRequestData() {
   if (!Number.isFinite(snrThreshold) || snrThreshold <= 0) {
     throw new Error("SNR threshold must be a positive number");
   }
+  if (snrType !== "mf" && snrType !== "opt") {
+    throw new Error("SNR type is required");
+  }
 
   const formData = new FormData();
   formData.append("transient_name", transientName);
   formData.append("t0", t0);
   formData.append("snr_threshold", String(snrThreshold));
-  formData.append("snr_type", snrTypeInput.value);
+  formData.append("snr_type", snrType);
 
   const iotaMin = parseOptionalFloat(iotaMinInput);
   const iotaMax = parseOptionalFloat(iotaMaxInput);
@@ -959,6 +963,17 @@ async function cancelJob() {
 }
 
 function initialize() {
+  // Always start from a clean form state when opening/reloading the page.
+  form.reset();
+  transientNameInput.value = "";
+  t0Input.value = "";
+  snrThresholdInput.value = "";
+  snrTypeInput.value = "";
+  iotaMinInput.value = "";
+  iotaMaxInput.value = "";
+  raInput.value = "";
+  decInput.value = "";
+
   const decimalInputs = [snrThresholdInput, iotaMinInput, iotaMaxInput, raInput, decInput];
   for (const inputEl of decimalInputs) {
     inputEl.addEventListener("input", () => {

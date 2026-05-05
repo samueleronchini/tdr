@@ -30,28 +30,29 @@
     <section class="panel">
       <h2>Input Parameters</h2>
 
-      <form id="job-form" novalidate>
+      <form id="job-form" novalidate autocomplete="off">
         <div class="grid two-cols">
           <label>
             Transient Name
-            <input id="transient-name" type="text" value="GRB_WEB" required>
+            <input id="transient-name" type="text" value="" required>
           </label>
 
           <label>
             Trigger Time (t0)
             <span class="hint">Use GPS seconds or ISO UTC, e.g. 2020-03-26T12:24:47.903</span>
-            <input id="t0" type="text" value="2020-03-26T12:24:47.903" required>
+            <input id="t0" type="text" value="" required>
           </label>
 
           <label>
             SNR Threshold
-            <input id="snr-threshold" type="number" step="0.1" value="8.5" required>
+            <input id="snr-threshold" type="number" step="0.1" value="" required>
           </label>
 
           <label>
             SNR Type
             <select id="snr-type">
-              <option value="mf" selected>matched filter (mf)</option>
+              <option value="" selected disabled>Select SNR type</option>
+              <option value="mf">matched filter (mf)</option>
               <option value="opt">optimal (opt)</option>
             </select>
           </label>
@@ -91,13 +92,13 @@
             <label>
               RA (deg)
               <span class="hint">Use decimal dot, e.g. 245.33</span>
-              <input id="ra" type="number" step="0.01" value="245.33" required>
+              <input id="ra" type="number" step="0.01" value="" required>
             </label>
 
             <label>
               DEC (deg)
               <span class="hint">Use decimal dot, e.g. -21.08</span>
-              <input id="dec" type="number" step="0.01" value="-21.08" required>
+              <input id="dec" type="number" step="0.01" value="" required>
             </label>
           </div>
         </fieldset>
