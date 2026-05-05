@@ -244,6 +244,26 @@ def _read_optimal_snr_file(filename):
     return ifos, optimal_snr_data, ra_inj, dec_inj, t0
 
 
+def _resolve_usable_ifos(file_ifos, online_ifos, source_file):
+    current_ifos = set(online_ifos)
+    usable_ifos = [ifo for ifo in file_ifos if ifo in current_ifos]
+    missing_ifos = sorted(set(file_ifos) - current_ifos)
+
+    if missing_ifos:
+        logging.info(
+            f"Skipping stale IFO columns from {source_file}: {missing_ifos}; "
+            f"current online IFOs are {sorted(current_ifos)}"
+        )
+
+    if not usable_ifos:
+        raise RuntimeError(
+            f"No overlapping IFOs between {source_file} ({sorted(set(file_ifos))}) "
+            f"and current online_ifos ({sorted(current_ifos)}). Delete stale results and rerun."
+        )
+
+    return usable_ifos
+
+
 def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, snr_threshold, snr_type):
     """
     Compute TDR values and range-fraction plots for BNS and NSBH systems.
@@ -295,7 +315,8 @@ def compute_range(ra, dec, online_ifos, chirp_masses, output_dir, iota_ranges, s
                     logging.info(f"Missing result file, skipping: {filename}")
                     continue
 
-                ifos, optimal_snr_data, ra_inj, dec_inj, t0 = _read_optimal_snr_file(filename)
+                file_ifos, optimal_snr_data, ra_inj, dec_inj, t0 = _read_optimal_snr_file(filename)
+                ifos = _resolve_usable_ifos(file_ifos, online_ifos, filename)
                 n_ifo = len(ifos)
 
                 if cbc_type == "nsbh":
@@ -455,7 +476,8 @@ def compute_map(cbc_type, m1, m2, online_ifos, output_dir, iota_min, iota_max, s
     filename = os.path.join(output_dir, f"results/results_{cbc_type}_m1_{m1}_m2_{m2}.hdf")
 
     detectors = {ifo: Detector(ifo) for ifo in online_ifos}
-    ifos, optimal_snr_data, ra_inj, dec_inj, t0 = _read_optimal_snr_file(filename)
+    file_ifos, optimal_snr_data, ra_inj, dec_inj, t0 = _read_optimal_snr_file(filename)
+    ifos = _resolve_usable_ifos(file_ifos, online_ifos, filename)
 
     eff_dist_ref = {ifo: detectors[ifo].effective_distance(100, ra_inj, dec_inj, 0, t0, 0) for ifo in ifos}
     map_data = np.zeros_like(RA_PIX, dtype=np.float64)

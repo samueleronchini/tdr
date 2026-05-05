@@ -7,6 +7,7 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import h5py
 import numpy as np
 from astropy.time import Time
 
@@ -222,6 +223,36 @@ def run_pycbc_optimal_snr(inj_file, res_file, online_ifos, output_dir):
     subprocess.run(cmd, check=True)
 
 
+def _read_result_file_ifos(result_file):
+    ifos = set()
+
+    with h5py.File(result_file, "r") as f:
+        for field in f.keys():
+            if "optimal_snr" not in field:
+                continue
+            ifos.add(field.split("_")[-1])
+
+    return sorted(ifos)
+
+
+def _result_file_needs_refresh(result_file, online_ifos, logger):
+    expected_ifos = sorted(set(online_ifos))
+
+    try:
+        result_ifos = _read_result_file_ifos(result_file)
+    except Exception as e:
+        logger.info(f"Could not read existing result file {result_file}: {e}; will recompute")
+        return True
+
+    if result_ifos != expected_ifos:
+        logger.info(
+            f"Refreshing stale result file {result_file}: file_ifos={result_ifos}, current_ifos={expected_ifos}"
+        )
+        return True
+
+    return False
+
+
 def create_injections_and_snr(t_center, online_ifos, output_dir, logger):
     inj_dir = os.path.join(output_dir, "inj")
     res_dir = os.path.join(output_dir, "results")
@@ -247,7 +278,13 @@ def create_injections_and_snr(t_center, online_ifos, output_dir, logger):
                     raise RuntimeError(f"Expected injection file was not created: {inj_file}")
 
                 if os.path.exists(res_file):
-                    continue
+                    if _result_file_needs_refresh(res_file, online_ifos, logger):
+                        try:
+                            os.remove(res_file)
+                        except OSError as e:
+                            raise RuntimeError(f"Cannot remove stale result file {res_file}: {e}") from e
+                    else:
+                        continue
 
                 start = time.time()
                 logger.info(f"{os.path.basename(output_dir)}: starting pycbc_optimal_snr for {cbc_type}{tag} m1={m1} m2={m2}")
