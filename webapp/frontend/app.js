@@ -318,10 +318,15 @@ async function apiFetch(url, options = {}) {
         ...(options.headers || {}),
       };
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-  });
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (_err) {
+    throw new Error("Backend non raggiungibile: verifica che API/tunnel sia online.");
+  }
 
   const text = await res.text();
   let bodyParsed = null;
