@@ -492,6 +492,14 @@ button:disabled {
   background: var(--surface-alt);
 }
 
+.plot-pdf-frame {
+  width: 100%;
+  height: 240px;
+  border: 1px solid var(--border);
+  border-radius: 0.2rem;
+  background: var(--surface-alt);
+}
+
 .table-wrap {
   overflow-x: auto;
 }

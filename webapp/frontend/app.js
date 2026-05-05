@@ -745,6 +745,14 @@ function buildPlotDisplayTitle(artifact) {
   return sanitizeDisplayText(artifact?.relative_path || artifact?.name || "Plot");
 }
 
+function artifactPathKey(artifact) {
+  return String(artifact?.relative_path || artifact?.name || "");
+}
+
+function isImagePath(path) {
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(String(path || ""));
+}
+
 function isPreviewImageArtifact(artifact) {
   const name = String(artifact?.name || "").toLowerCase();
   return name.endsWith("_preview.png");
@@ -752,19 +760,46 @@ function isPreviewImageArtifact(artifact) {
 
 function buildPdfPreviewMap(plotFiles) {
   const map = new Map();
+  const previewImagePaths = new Set();
+  const pdfPaths = new Set();
 
   for (const artifact of plotFiles || []) {
+    const relativePath = artifactPathKey(artifact);
+    if (relativePath.toLowerCase().endsWith(".pdf")) {
+      pdfPaths.add(relativePath);
+    }
+  }
+
+  for (const artifact of plotFiles || []) {
+    const relativePath = artifactPathKey(artifact);
+
     if (!isPreviewImageArtifact(artifact)) {
       continue;
     }
 
-    const key = String(artifact.relative_path || "").replace(/_preview\.png$/i, ".pdf");
+    const key = relativePath.replace(/_preview\.png$/i, ".pdf");
     if (key) {
       map.set(key, artifact);
+      previewImagePaths.add(relativePath);
     }
   }
 
-  return map;
+  for (const artifact of plotFiles || []) {
+    const relativePath = artifactPathKey(artifact);
+    if (!isImagePath(relativePath) || isPreviewImageArtifact(artifact)) {
+      continue;
+    }
+
+    const key = relativePath.replace(/\.(png|jpe?g|webp|gif|bmp|svg)$/i, ".pdf");
+    if (!pdfPaths.has(key) || map.has(key)) {
+      continue;
+    }
+
+    map.set(key, artifact);
+    previewImagePaths.add(relativePath);
+  }
+
+  return { map, previewImagePaths };
 }
 
 async function renderPlotCards(plotFiles) {
@@ -778,8 +813,8 @@ async function renderPlotCards(plotFiles) {
     return;
   }
 
-  const pdfPreviewMap = buildPdfPreviewMap(plotFiles);
-  const primaryArtifacts = plotFiles.filter((artifact) => !isPreviewImageArtifact(artifact));
+  const { map: pdfPreviewMap, previewImagePaths } = buildPdfPreviewMap(plotFiles);
+  const primaryArtifacts = plotFiles.filter((artifact) => !previewImagePaths.has(artifactPathKey(artifact)));
 
   for (const artifact of primaryArtifacts) {
     const card = document.createElement("article");
@@ -793,15 +828,22 @@ async function renderPlotCards(plotFiles) {
     const downloadUrl = artifactDownloadUrl(artifact);
     const ext = String(artifact.name || "").toLowerCase();
     const isPdf = ext.endsWith(".pdf");
-    const previewArtifact = isPdf ? pdfPreviewMap.get(String(artifact.relative_path || "")) : artifact;
+    const previewArtifact = isPdf ? pdfPreviewMap.get(artifactPathKey(artifact)) : artifact;
 
-    if (previewArtifact) {
+    if (previewArtifact && isImagePath(artifactPathKey(previewArtifact))) {
       const img = document.createElement("img");
       img.className = "plot-image";
       img.src = artifactPreviewUrl(previewArtifact);
       img.alt = sanitizeDisplayText(artifact.relative_path);
       img.loading = "lazy";
       card.appendChild(img);
+    } else if (isPdf) {
+      const frame = document.createElement("iframe");
+      frame.className = "plot-pdf-frame";
+      frame.src = `${url}#view=FitH`;
+      frame.loading = "lazy";
+      frame.title = sanitizeDisplayText(artifact.relative_path || artifact.name || "Plot preview");
+      card.appendChild(frame);
     } else {
       const placeholder = document.createElement("div");
       placeholder.className = "plot-preview-empty";
