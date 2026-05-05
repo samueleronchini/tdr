@@ -340,6 +340,18 @@ th {
   letter-spacing: 0.05em;
 }
 
+.command-options-table th:first-child,
+.command-options-table td:first-child {
+  width: 36%;
+  min-width: 18.5rem;
+  white-space: nowrap;
+  padding-right: 1rem;
+}
+
+.command-options-table td:first-child code {
+  white-space: nowrap;
+}
+
 .columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
