@@ -92,7 +92,7 @@
                 </tr>
                 <tr>
                   <td><code>--snr-threshold</code></td>
-                  <td>Detection threshold used for D90 (default 8.5).</td>
+                  <td>Detection threshold used for D<sub>90</sub> (default 8.5).</td>
                 </tr>
                 <tr>
                   <td><code>--snr-type</code></td>
@@ -106,17 +106,16 @@
         <section id="example" class="card">
           <h2>Example of use: GW170817</h2>
           <p>
-            Temporary example run using:
-            <code>examples/glg_healpix_all_bn200326517_v00.fit</code>
-            (the dedicated final GW170817 map can be swapped in later without changing page structure).
+            Example run using the GW170817 sky map:
+            <code>gw170817/glg_healpix_all_bn170817529_v00.fit</code>.
           </p>
 
           <div class="codeblock">
             <button class="copy-btn" data-copy-target="gw170817-cmd" type="button">Copy</button>
 <pre id="gw170817-cmd"><code>tdr \
-  --output-dir /Users/sjs8171/Desktop/gw_tdr_results/GW170817_TEMP \
+  --output-dir /Users/sjs8171/Desktop/gw_tdr_results/GW170817 \
   --t0 2017-08-17T12:41:04.444 \
-  --skymap-file /Users/sjs8171/Desktop/gw_tdr/examples/glg_healpix_all_bn200326517_v00.fit \
+  --skymap-file /Users/sjs8171/Desktop/gw_tdr/gw170817/glg_healpix_all_bn170817529_v00.fit \
   --snr-threshold 8.5 \
   --snr-type mf</code></pre>
           </div>
@@ -187,14 +186,14 @@
               <thead>
                 <tr>
                   <th>Mass Combination</th>
-                  <th>D90 0-45 deg (Mpc)</th>
-                  <th>D90 0-90 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0-45 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0-90 deg (Mpc)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>m1=1, m2=1</td><td>117.587</td><td>53.155</td></tr>
-                <tr><td>m1=1.4, m2=1.4</td><td>155.757</td><td>68.517</td></tr>
-                <tr><td>m1=2.0, m2=2.0</td><td>208.439</td><td>89.073</td></tr>
+                <tr><td>m1=1, m2=1</td><td>73.224</td><td>39.250</td></tr>
+                <tr><td>m1=1.4, m2=1.4</td><td>95.031</td><td>48.565</td></tr>
+                <tr><td>m1=2.0, m2=2.0</td><td>126.309</td><td>61.334</td></tr>
               </tbody>
             </table>
           </div>
@@ -208,14 +207,14 @@
               <thead>
                 <tr>
                   <th>Mass Combination</th>
-                  <th>D90 0-45 deg (Mpc)</th>
-                  <th>D90 0-90 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0-45 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0-90 deg (Mpc)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>m1=5, m2=1</td><td>209.507</td><td>90.065</td></tr>
-                <tr><td>m1=10, m2=1.4</td><td>316.152</td><td>133.394</td></tr>
-                <tr><td>m1=20, m2=2.0</td><td>489.854</td><td>204.744</td></tr>
+                <tr><td>m1=5, m2=1</td><td>126.633</td><td>61.964</td></tr>
+                <tr><td>m1=10, m2=1.4</td><td>189.957</td><td>89.382</td></tr>
+                <tr><td>m1=20, m2=2.0</td><td>294.825</td><td>135.105</td></tr>
               </tbody>
             </table>
           </div>
@@ -292,6 +291,61 @@
     );
 
     sections.forEach((section) => observer.observe(section));
+
+    async function getPdfAspectRatio(url) {
+      try {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) {
+          return null;
+        }
+
+        const bytes = await response.arrayBuffer();
+        const scanLimit = Math.min(bytes.byteLength, 600000);
+        const text = new TextDecoder('latin1').decode(bytes.slice(0, scanLimit));
+        const match = text.match(/\/MediaBox\s*\[\s*([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s+([\-\d.]+)\s*\]/);
+        if (!match) {
+          return null;
+        }
+
+        const x0 = Number(match[1]);
+        const y0 = Number(match[2]);
+        const x1 = Number(match[3]);
+        const y1 = Number(match[4]);
+        const width = Math.abs(x1 - x0);
+        const height = Math.abs(y1 - y0);
+
+        if (!Number.isFinite(width) || !Number.isFinite(height) || height <= 0) {
+          return null;
+        }
+
+        return width / height;
+      } catch (_err) {
+        return null;
+      }
+    }
+
+    async function applyPlotAspectRatios() {
+      const plotFrames = Array.from(document.querySelectorAll('.doc-plot-frame'));
+      for (const frame of plotFrames) {
+        const src = frame.getAttribute('src') || '';
+        const pdfUrl = src.split('#')[0];
+        if (!pdfUrl.toLowerCase().endsWith('.pdf')) {
+          continue;
+        }
+
+        const ratio = await getPdfAspectRatio(pdfUrl);
+        if (!ratio || !Number.isFinite(ratio) || ratio <= 0) {
+          continue;
+        }
+
+        const wrapper = frame.closest('.doc-plot-frame-wrap');
+        if (wrapper) {
+          wrapper.style.aspectRatio = String(ratio);
+        }
+      }
+    }
+
+    void applyPlotAspectRatios();
   </script>
 </body>
 </html>

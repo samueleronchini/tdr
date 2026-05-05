@@ -306,7 +306,7 @@ function renderResultsHeader(thead, angleColumns) {
 
   for (const label of columns) {
     const header = document.createElement("th");
-    header.textContent = label === "-" ? "D90 (Mpc)" : `D90 ${label} deg (Mpc)`;
+    header.innerHTML = label === "-" ? "D<sub>90</sub> (Mpc)" : `D<sub>90</sub> ${label} deg (Mpc)`;
     row.appendChild(header);
   }
 
@@ -713,6 +713,32 @@ async function getPdfAspectRatio(url) {
   }
 }
 
+function buildPlotDisplayTitle(artifact) {
+  const rawName = (artifact?.name || "").toLowerCase();
+
+  if (rawName === "psd_plot.pdf") {
+    return "PSD plot";
+  }
+
+  if (rawName === "bns_targeted_range.pdf") {
+    return "BNS efficiency curve";
+  }
+
+  if (rawName === "nsbh_targeted_range.pdf") {
+    return "NSBH efficiency curve";
+  }
+
+  if (rawName.startsWith("range_map_") && rawName.endsWith(".pdf")) {
+    return "TDR map";
+  }
+
+  if (rawName.endsWith(".pdf") || rawName.endsWith(".png") || rawName.endsWith(".jpg") || rawName.endsWith(".jpeg")) {
+    return "Generated plot";
+  }
+
+  return sanitizeDisplayText(artifact?.relative_path || artifact?.name || "Plot");
+}
+
 async function renderPlotCards(plotFiles) {
   plotsGallery.innerHTML = "";
 
@@ -729,7 +755,7 @@ async function renderPlotCards(plotFiles) {
     card.className = "plot-card";
 
     const title = document.createElement("h4");
-    title.textContent = sanitizeDisplayText(artifact.relative_path);
+    title.textContent = buildPlotDisplayTitle(artifact);
     card.appendChild(title);
 
     const url = artifactPreviewUrl(artifact);

@@ -322,10 +322,27 @@ button:disabled {
 
 .ifos-line {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
+  grid-template-columns: 140px minmax(0, 1fr);
   gap: 0.6rem;
   align-items: center;
   margin: 0.2rem 0 0.55rem;
+}
+
+.ifos-label {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #0f3d3a;
+}
+
+.ifos-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #083f43;
+  background: rgba(15, 118, 110, 0.12);
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 0.55rem;
+  padding: 0.28rem 0.55rem;
+  width: fit-content;
 }
 
 .results-note {

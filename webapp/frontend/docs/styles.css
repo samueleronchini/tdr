@@ -348,7 +348,7 @@ ol {
 
 .doc-plot-frame-wrap {
   width: 100%;
-  aspect-ratio: 1 / 1.33;
+  aspect-ratio: 1 / 1.4142;
   border: 1px solid var(--line);
   border-radius: 0.6rem;
   overflow: hidden;

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260507">
 </head>
 <body>
   <div class="bg-orb bg-orb-a" aria-hidden="true"></div>
@@ -45,7 +45,8 @@
 
           <label>
             SNR Threshold
-            <input id="snr-threshold" type="number" step="0.1" value="" required>
+            <span class="hint">Use decimal dot, e.g. 8.5</span>
+            <input id="snr-threshold" type="text" inputmode="decimal" value="" placeholder="8.5" required>
           </label>
 
           <label>
@@ -148,8 +149,8 @@
         <div id="plots-gallery" class="plots-grid"></div>
 
         <div id="ifos-line" class="ifos-line" hidden>
-          <span class="label">Online IFOs</span>
-          <span id="ifos-online" class="mono">-</span>
+          <span class="label ifos-label">Online IFOs</span>
+          <span id="ifos-online" class="mono ifos-value">-</span>
         </div>
 
         <h3>Results Summary</h3>
@@ -180,7 +181,7 @@
     </section>
   </main>
 
-  <script src="./runtime-config.js?v=20260506"></script>
-  <script type="module" src="./app.js?v=20260506"></script>
+  <script src="./runtime-config.js?v=20260507"></script>
+  <script type="module" src="./app.js?v=20260507"></script>
 </body>
 </html>
