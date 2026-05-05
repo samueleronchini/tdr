@@ -138,8 +138,25 @@ function isCommandEchoLine(line) {
   return /targ_ac_git\.targ_range_snr_mf|--output-dir|--cache-dir/.test(line);
 }
 
+function normalizeProgressLine(line) {
+  return String(line || "")
+    .replace(/[.,]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function isDownloadProgressLine(line) {
-  return /\d{1,3}%\[/.test(line);
+  if (/\d{1,3}%\[/.test(line)) {
+    return true;
+  }
+
+  const normalized = normalizeProgressLine(line);
+  const hasPercent = /(?:^|\s)\d{1,3}\s*%(?:\s|$)/.test(normalized);
+  const hasThroughputToken = /(?:^|\s)\d+(?:\.\d+)?\s*(?:K|M|G)(?:i?B)?(?:\s|$)/i.test(normalized);
+  const hasEtaToken = /(?:^|\s)\d+\s*s(?:\s|$)/i.test(normalized);
+  const hasProgressGlyphs = /\.{5,}|={3,}|>{2,}/.test(line);
+
+  return hasPercent && ((hasThroughputToken && hasEtaToken) || hasProgressGlyphs);
 }
 
 function isDownloadNoiseLine(line) {
@@ -154,7 +171,8 @@ function isDownloadNoiseLine(line) {
 }
 
 function extractProgressPercent(line) {
-  const matches = [...line.matchAll(/(\d{1,3})%\[/g)];
+  const normalized = normalizeProgressLine(line);
+  const matches = [...normalized.matchAll(/(\d{1,3})\s*%/g)];
   if (matches.length === 0) {
     return null;
   }
@@ -162,7 +180,7 @@ function extractProgressPercent(line) {
   let maxPercent = null;
   for (const match of matches) {
     const percent = Number(match[1]);
-    if (!Number.isFinite(percent)) {
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
       continue;
     }
     maxPercent = maxPercent === null ? percent : Math.max(maxPercent, percent);
