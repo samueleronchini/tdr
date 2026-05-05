@@ -7,41 +7,44 @@
   <meta name="description" content="Installation guide for GW targeted detectability range.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./">GW TDR Docs</a>
-    <nav class="toplinks" aria-label="top links">
-      <div class="toplinks-main">
+    <div class="topbar-inner">
+      <a class="brand" href="./">GW TDR Docs</a>
+      <nav class="toplinks-main" aria-label="Top links">
         <a href="./">Intro</a>
         <a class="active" href="./installation.html">Installation</a>
         <a href="./usage.html">Usage and example of use</a>
         <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </div>
+      </nav>
       <a class="web-runner-tab" href="../">Web Runner</a>
-    </nav>
+    </div>
   </header>
 
-  <main class="page">
-    <section class="hero">
-      <p class="eyebrow">Installation</p>
-      <h1>Install and verify TDR</h1>
-      <p>
-        Follow these steps to set up a working local environment for the <code>tdr</code> command-line tool.
-      </p>
-    </section>
+  <div class="docs-shell">
+    <aside class="site-nav" aria-label="Documentation navigation">
+      <h2>Documentation</h2>
+      <a href="./">Intro</a>
+      <a class="active" href="./installation.html">Installation</a>
+      <a href="./usage.html">Usage and example of use</a>
+      <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">Repository</a>
+      <div class="site-nav-footer">
+        <p>Need updates or fixes?</p>
+        <a href="https://github.com/samueleronchini/gw_tdr/issues" target="_blank" rel="noopener noreferrer">Open an issue</a>
+      </div>
+    </aside>
 
-    <div class="layout">
-      <aside class="toc" aria-label="Table of contents">
-        <h2>On this page</h2>
-        <a href="#prereq">Prerequisites</a>
-        <a href="#env">Create environment</a>
-        <a href="#install">Install TDR</a>
-        <a href="#verify">Verify installation</a>
-        <a href="#notes">Notes</a>
-      </aside>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Installation</p>
+        <h1>Install and verify TDR</h1>
+        <p>
+          Follow these steps to set up a working local environment for the <code>tdr</code> command-line tool.
+        </p>
+      </section>
 
       <article class="content">
         <section id="prereq" class="card">
@@ -88,9 +91,23 @@ pip install -e .</code></pre>
           </ul>
         </section>
       </article>
-    </div>
-  </main>
+    </main>
 
+    <aside class="toc" aria-label="Table of contents">
+      <h2>On this page</h2>
+      <a href="#prereq">Prerequisites</a>
+      <a href="#env">Create environment</a>
+      <a href="#install">Install TDR</a>
+      <a href="#verify">Verify installation</a>
+      <a href="#notes">Notes</a>
+    </aside>
+  </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark and light theme" aria-pressed="false">
+    Switch to dark
+  </button>
+
+  <script src="./theme-toggle.js"></script>
   <script>
     const copyButtons = document.querySelectorAll('.copy-btn');
     copyButtons.forEach((btn) => {

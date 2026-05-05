@@ -7,44 +7,45 @@
   <meta name="description" content="Usage guide and GW170817 example for GW targeted detectability range.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./">GW TDR Docs</a>
-    <nav class="toplinks" aria-label="top links">
-      <div class="toplinks-main">
+    <div class="topbar-inner">
+      <a class="brand" href="./">GW TDR Docs</a>
+      <nav class="toplinks-main" aria-label="Top links">
         <a href="./">Intro</a>
         <a href="./installation.html">Installation</a>
         <a class="active" href="./usage.html">Usage and example of use</a>
         <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </div>
+      </nav>
       <a class="web-runner-tab" href="../">Web Runner</a>
-    </nav>
+    </div>
   </header>
 
-  <main class="page">
-    <section class="hero">
-      <p class="eyebrow">Usage and example of use</p>
-      <h1>Run the tool and inspect outputs</h1>
-      <p>
-        This page shows command usage plus a full worked example for GW170817,
-        including all generated plots and the final default-angle tables (0-45 and 0-90 deg).
-      </p>
-    </section>
+  <div class="docs-shell">
+    <aside class="site-nav" aria-label="Documentation navigation">
+      <h2>Documentation</h2>
+      <a href="./">Intro</a>
+      <a href="./installation.html">Installation</a>
+      <a class="active" href="./usage.html">Usage and example of use</a>
+      <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">Repository</a>
+      <div class="site-nav-footer">
+        <p>Need updates or fixes?</p>
+        <a href="https://github.com/samueleronchini/gw_tdr/issues" target="_blank" rel="noopener noreferrer">Open an issue</a>
+      </div>
+    </aside>
 
-    <div class="layout">
-      <aside class="toc" aria-label="Table of contents">
-        <h2>On this page</h2>
-        <a href="#basic">Basic command</a>
-        <a href="#required">Required inputs</a>
-        <a href="#options">Command options</a>
-        <a href="#example">Example: GW170817</a>
-        <a href="#plots">All returned plots</a>
-        <a href="#tables">Results tables</a>
-        <a href="#outputs">Output structure</a>
-      </aside>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Usage and example of use</p>
+        <h1>Run the tool and inspect outputs</h1>
+        <p>
+          This page shows command usage plus a full worked example for GW170817,
+          including all generated plots and the final default-angle tables (0-45 and 0-90 deg).
+        </p>
+      </section>
 
       <article class="content">
         <section id="basic" class="card">
@@ -240,9 +241,25 @@
           </div>
         </section>
       </article>
-    </div>
-  </main>
+    </main>
 
+    <aside class="toc" aria-label="Table of contents">
+      <h2>On this page</h2>
+      <a href="#basic">Basic command</a>
+      <a href="#required">Required inputs</a>
+      <a href="#options">Command options</a>
+      <a href="#example">Example: GW170817</a>
+      <a href="#plots">All returned plots</a>
+      <a href="#tables">Results tables</a>
+      <a href="#outputs">Output structure</a>
+    </aside>
+  </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark and light theme" aria-pressed="false">
+    Switch to dark
+  </button>
+
+  <script src="./theme-toggle.js"></script>
   <script>
     const copyButtons = document.querySelectorAll('.copy-btn');
     copyButtons.forEach((btn) => {

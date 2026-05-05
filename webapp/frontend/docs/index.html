@@ -7,41 +7,45 @@
   <meta name="description" content="Introduction page for GW TDR documentation.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./">GW TDR Docs</a>
-    <nav class="toplinks" aria-label="top links">
-      <div class="toplinks-main">
+    <div class="topbar-inner">
+      <a class="brand" href="./">GW TDR Docs</a>
+      <nav class="toplinks-main" aria-label="Top links">
         <a class="active" href="./">Intro</a>
         <a href="./installation.html">Installation</a>
         <a href="./usage.html">Usage and example of use</a>
         <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </div>
+      </nav>
       <a class="web-runner-tab" href="../">Web Runner</a>
-    </nav>
+    </div>
   </header>
 
-  <main class="page">
-    <section class="hero">
-      <p class="eyebrow">Intro</p>
-      <h1>GW targeted detectability range</h1>
-      <p>
-        The <code>tdr</code> tool computes the gravitational wave (GW) targeted detectability range (D<sub>90</sub>) for external astronomical
-        triggers, using trigger time and sky localization together with GW detector sensitivity, under the assumption that the signal is a binary neutron star or black hole-neutron star merger.
-      </p>
-    </section>
+  <div class="docs-shell">
+    <aside class="site-nav" aria-label="Documentation navigation">
+      <h2>Documentation</h2>
+      <a class="active" href="./">Intro</a>
+      <a href="./installation.html">Installation</a>
+      <a href="./usage.html">Usage and example of use</a>
+      <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">Repository</a>
+      <div class="site-nav-footer">
+        <p>Need updates or fixes?</p>
+        <a href="https://github.com/samueleronchini/gw_tdr/issues" target="_blank" rel="noopener noreferrer">Open an issue</a>
+      </div>
+    </aside>
 
-    <div class="layout">
-      <aside class="toc" aria-label="Table of contents">
-        <h2>On this page</h2>
-        <a href="#overview">What TDR does</a>
-        <a href="#workflow">Workflow</a>
-        <a href="#outputs">Main outputs</a>
-        <a href="#network">Detector/network behavior</a>
-      </aside>
+    <main class="page">
+      <section class="hero">
+        <p class="eyebrow">Intro</p>
+        <h1>GW targeted detectability range</h1>
+        <p>
+          The <code>tdr</code> tool computes the gravitational wave (GW) targeted detectability range (D<sub>90</sub>) for external astronomical
+          triggers, using trigger time and sky localization together with GW detector sensitivity, under the assumption that the signal is a binary neutron star or black hole-neutron star merger.
+        </p>
+      </section>
 
       <article class="content">
         <section id="overview" class="card">
@@ -57,10 +61,10 @@
           <h2>Workflow</h2>
           <ol>
             <li>Identify the GW observing run from trigger time <code>t0</code>.</li>
-            <li>Check GWOSC data availability for H1/L1/V1.</li>
-            <li>Download a 256 s strain segment around the trigger.</li>
+            <li>Check <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a> data availability for H1/L1/V1.</li>
+            <li>Download a 256 s strain segment around the trigger from <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a>.</li>
             <li>Estimate PSDs for available detectors.</li>
-            <li>Generate BNS and NSBH injections with PyCBC.</li>
+            <li>Generate BNS and NSBH injections with <a href="https://pycbc.org" target="_blank" rel="noopener noreferrer">PyCBC</a>.</li>
             <li>Compute SNRs and D<sub>90</sub> targeted range values.</li>
             <li>Produce plots, sky maps, and JSON result files.</li>
           </ol>
@@ -86,9 +90,22 @@
           </ul>
         </section>
       </article>
-    </div>
-  </main>
+    </main>
 
+    <aside class="toc" aria-label="Table of contents">
+      <h2>On this page</h2>
+      <a href="#overview">What TDR does</a>
+      <a href="#workflow">Workflow</a>
+      <a href="#outputs">Main outputs</a>
+      <a href="#network">Detector/network behavior</a>
+    </aside>
+  </div>
+
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark and light theme" aria-pressed="false">
+    Switch to dark
+  </button>
+
+  <script src="./theme-toggle.js"></script>
   <script>
     const tocLinks = Array.from(document.querySelectorAll('.toc a'));
     const sectionIds = tocLinks.map((a) => a.getAttribute('href')).filter(Boolean);
