@@ -753,6 +753,78 @@ function isImagePath(path) {
   return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(String(path || ""));
 }
 
+function baseName(path) {
+  const normalized = String(path || "");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] || normalized;
+}
+
+let pdfJsLibPromise = null;
+
+async function loadPdfJsLib() {
+  if (pdfJsLibPromise) {
+    return pdfJsLibPromise;
+  }
+
+  pdfJsLibPromise = import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.mjs")
+    .then((pdfjsLib) => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.mjs";
+      return pdfjsLib;
+    })
+    .catch((err) => {
+      pdfJsLibPromise = null;
+      throw err;
+    });
+
+  return pdfJsLibPromise;
+}
+
+async function renderPdfFirstPageImage(pdfUrl, altText) {
+  let pdfDocument = null;
+
+  try {
+    const pdfjsLib = await loadPdfJsLib();
+    const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, withCredentials: false });
+    pdfDocument = await loadingTask.promise;
+
+    const page = await pdfDocument.getPage(1);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const targetWidth = 1400;
+    const scale = baseViewport.width > 0 ? targetWidth / baseViewport.width : 1;
+    const viewport = page.getViewport({ scale: Number.isFinite(scale) && scale > 0 ? scale : 1 });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(viewport.width));
+    canvas.height = Math.max(1, Math.round(viewport.height));
+
+    const context = canvas.getContext("2d", { alpha: false });
+    if (!context) {
+      return null;
+    }
+
+    await page.render({ canvasContext: context, viewport }).promise;
+
+    const img = document.createElement("img");
+    img.className = "plot-image";
+    img.src = canvas.toDataURL("image/png");
+    img.alt = altText;
+    img.loading = "lazy";
+    img.decoding = "async";
+    return img;
+  } catch (_err) {
+    return null;
+  } finally {
+    if (pdfDocument && typeof pdfDocument.destroy === "function") {
+      try {
+        pdfDocument.destroy();
+      } catch (_err) {
+        // Ignore cleanup errors from PDF workers.
+      }
+    }
+  }
+}
+
 function isPreviewImageArtifact(artifact) {
   const name = String(artifact?.name || "").toLowerCase();
   return name.endsWith("_preview.png");
@@ -762,6 +834,7 @@ function buildPdfPreviewMap(plotFiles) {
   const map = new Map();
   const previewImagePaths = new Set();
   const pdfPaths = new Set();
+  const imageByPdfFileName = new Map();
 
   for (const artifact of plotFiles || []) {
     const relativePath = artifactPathKey(artifact);
@@ -791,12 +864,36 @@ function buildPdfPreviewMap(plotFiles) {
     }
 
     const key = relativePath.replace(/\.(png|jpe?g|webp|gif|bmp|svg)$/i, ".pdf");
+    const fileNameKey = baseName(key);
     if (!pdfPaths.has(key) || map.has(key)) {
+      if (fileNameKey && !imageByPdfFileName.has(fileNameKey)) {
+        imageByPdfFileName.set(fileNameKey, artifact);
+      }
       continue;
     }
 
     map.set(key, artifact);
     previewImagePaths.add(relativePath);
+
+    if (fileNameKey && !imageByPdfFileName.has(fileNameKey)) {
+      imageByPdfFileName.set(fileNameKey, artifact);
+    }
+  }
+
+  for (const artifact of plotFiles || []) {
+    const relativePath = artifactPathKey(artifact);
+    if (!relativePath.toLowerCase().endsWith(".pdf") || map.has(relativePath)) {
+      continue;
+    }
+
+    const fileNameKey = baseName(relativePath);
+    const fallbackArtifact = imageByPdfFileName.get(fileNameKey);
+    if (!fallbackArtifact) {
+      continue;
+    }
+
+    map.set(relativePath, fallbackArtifact);
+    previewImagePaths.add(artifactPathKey(fallbackArtifact));
   }
 
   return { map, previewImagePaths };
@@ -838,12 +935,17 @@ async function renderPlotCards(plotFiles) {
       img.loading = "lazy";
       card.appendChild(img);
     } else if (isPdf) {
-      const frame = document.createElement("iframe");
-      frame.className = "plot-pdf-frame";
-      frame.src = `${url}#view=FitH`;
-      frame.loading = "lazy";
-      frame.title = sanitizeDisplayText(artifact.relative_path || artifact.name || "Plot preview");
-      card.appendChild(frame);
+      const altText = sanitizeDisplayText(artifact.relative_path || artifact.name || "Plot preview");
+      const renderedImage = await renderPdfFirstPageImage(url, altText);
+
+      if (renderedImage) {
+        card.appendChild(renderedImage);
+      } else {
+        const placeholder = document.createElement("div");
+        placeholder.className = "plot-preview-empty";
+        placeholder.textContent = "Preview image not available.";
+        card.appendChild(placeholder);
+      }
     } else {
       const placeholder = document.createElement("div");
       placeholder.className = "plot-preview-empty";
