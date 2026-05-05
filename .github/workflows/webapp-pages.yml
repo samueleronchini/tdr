@@ -1,4 +1,5 @@
 name: Deploy Webapp to GitHub Pages
+# Path-filter trigger marker: keep this workflow under versioned control.
 
 on:
   push:
