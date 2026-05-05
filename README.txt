@@ -1,5 +1,5 @@
-TDR
-=======
+GW Targetet Detectability Range
+===============================
 
 This repository contains a Python pipeline to estimate the Targeted Detectability Range (TDR) for compact-binary gravitational-wave signals associated with an external GRB trigger.
 
