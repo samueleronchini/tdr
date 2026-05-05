@@ -5,6 +5,7 @@ import os
 import random
 import subprocess
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 from astropy.time import Time
@@ -98,35 +99,58 @@ def report_ifos_used(output_dir, ifo_status, strain_segments, online_ifos, logge
 def load_strain_segments(run_cfg, t_center, cache_dir, output_dir, logger):
     strain_segments = {}
     ifo_status = {}
+    run_label = os.path.basename(output_dir)
 
     for ifo in run_cfg["ifos"]:
         ifo_status[ifo] = {"strain_available": False, "psd_ok": False, "usable": False, "network_failed": False, "reason": ""}
 
-        try:
-            ifo_cfg = _resolve_ifo_config(run_cfg, ifo, t_center)
-            seg, used_paths = _load_segment_from_cache(ifo, ifo_cfg, t_center, cache_dir)
+    ifos = list(run_cfg["ifos"].keys())
+    if not ifos:
+        return strain_segments, ifo_status
 
-            strain_segments[ifo] = seg
-            ifo_status[ifo]["strain_available"] = True
+    try:
+        requested_workers = int(os.getenv("TDR_GWOSC_DOWNLOAD_WORKERS", "3"))
+    except ValueError:
+        requested_workers = 3
 
-            logger.info(
-                f"{os.path.basename(output_dir)}: run={run_cfg['name']} ifo={ifo} "
-                f"channel={ifo_cfg['channel']} frame_type={ifo_cfg['frame_type']} "
-                f"sample_rate={ifo_cfg['sample_rate']} strain usable from {used_paths}"
-            )
+    max_workers = min(len(ifos), max(1, requested_workers))
+    logger.info(f"{run_label}: loading GWOSC strain with {max_workers} worker(s)")
 
-        except GWOSCTransientError as e:
-            ifo_status[ifo]["network_failed"] = True
-            ifo_status[ifo]["reason"] = f"GWOSC/network failure: {e}"
-            logger.info(f"{os.path.basename(output_dir)}: run={run_cfg['name']} ifo={ifo} GWOSC/network failure: {e}")
+    def _fetch_ifo(ifo):
+        ifo_cfg = _resolve_ifo_config(run_cfg, ifo, t_center)
+        seg, used_paths = _load_segment_from_cache(ifo, ifo_cfg, t_center, cache_dir)
+        return ifo_cfg, seg, used_paths
 
-        except GWOSCNoDataError as e:
-            ifo_status[ifo]["reason"] = f"no GWOSC data/incomplete coverage: {e}"
-            logger.info(f"{os.path.basename(output_dir)}: run={run_cfg['name']} ifo={ifo} no usable data: {e}")
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_fetch_ifo, ifo): ifo for ifo in ifos}
 
-        except Exception as e:
-            ifo_status[ifo]["reason"] = f"strain unavailable/incomplete: {e}"
-            logger.info(f"{os.path.basename(output_dir)}: run={run_cfg['name']} ifo={ifo} unavailable: {e}")
+        for future in as_completed(futures):
+            ifo = futures[future]
+
+            try:
+                ifo_cfg, seg, used_paths = future.result()
+
+                strain_segments[ifo] = seg
+                ifo_status[ifo]["strain_available"] = True
+
+                logger.info(
+                    f"{run_label}: run={run_cfg['name']} ifo={ifo} "
+                    f"channel={ifo_cfg['channel']} frame_type={ifo_cfg['frame_type']} "
+                    f"sample_rate={ifo_cfg['sample_rate']} strain usable from {used_paths}"
+                )
+
+            except GWOSCTransientError as e:
+                ifo_status[ifo]["network_failed"] = True
+                ifo_status[ifo]["reason"] = f"GWOSC/network failure: {e}"
+                logger.info(f"{run_label}: run={run_cfg['name']} ifo={ifo} GWOSC/network failure: {e}")
+
+            except GWOSCNoDataError as e:
+                ifo_status[ifo]["reason"] = f"no GWOSC data/incomplete coverage: {e}"
+                logger.info(f"{run_label}: run={run_cfg['name']} ifo={ifo} no usable data: {e}")
+
+            except Exception as e:
+                ifo_status[ifo]["reason"] = f"strain unavailable/incomplete: {e}"
+                logger.info(f"{run_label}: run={run_cfg['name']} ifo={ifo} unavailable: {e}")
 
     network_failed_ifos = [ifo for ifo, status in ifo_status.items() if status.get("network_failed", False)]
     if network_failed_ifos:
@@ -328,6 +352,11 @@ def build_parser():
     parser.add_argument("--snr-type", choices=["mf", "opt"], default="mf",
         help="SNR type used to define the TDR: 'mf' for matched-filter SNR, 'opt' for optimal SNR. Default: mf.",
     )
+    parser.add_argument(
+        "--cache-dir",
+        default=None,
+        help="Optional shared GWOSC cache directory. Default: <output_dir>/gwosc_cache.",
+    )
 
     return parser
 
@@ -338,6 +367,9 @@ def targ_range(args=None):
 
     if args.skymap_file == "None":
         args.skymap_file = None
+
+    if args.cache_dir == "None":
+        args.cache_dir = None
 
     if args.skymap_file is None and (args.ra is None or args.dec is None):
         raise ValueError("Please provide either --skymap-file or both --ra and --dec.")
@@ -376,8 +408,11 @@ def targ_range(args=None):
     for prior in iota_ranges:
         print(f"  {np.degrees(prior['iota_min']):.1f} deg <= iota <= {np.degrees(prior['iota_max']):.1f} deg", flush=True)
 
-    cache_dir = os.path.join(args.output_dir, "gwosc_cache")
+    cache_dir = os.path.abspath(args.cache_dir) if args.cache_dir else os.path.join(args.output_dir, "gwosc_cache")
     os.makedirs(cache_dir, exist_ok=True)
+
+    logger.info(f"Using cache_dir={cache_dir}")
+    print(f"USING GWOSC CACHE DIR: {cache_dir}", flush=True)
 
     print("RUNNING SINGLE-TRIGGER ANALYSIS", flush=True)
 

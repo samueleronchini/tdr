@@ -22,10 +22,12 @@ from pydantic import BaseModel, Field
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RESULTS_ROOT = Path(os.getenv("TDR_RESULTS_ROOT", "/Users/sjs8171/Desktop/gw_tdr_results")).resolve()
+GWOSC_CACHE_ROOT = Path(os.getenv("TDR_GWOSC_CACHE_ROOT", str(RESULTS_ROOT / "_gwosc_cache"))).resolve()
 RUNS_DIR = REPO_ROOT / "webapp" / "runs"
 UPLOADS_DIR = RUNS_DIR / "uploads"
 
 RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
+GWOSC_CACHE_ROOT.mkdir(parents=True, exist_ok=True)
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -219,6 +221,8 @@ def _build_command(state: JobState) -> List[str]:
         "targ_ac_git.targ_range_snr_mf",
         "--output-dir",
         str(state.output_dir),
+        "--cache-dir",
+        str(GWOSC_CACHE_ROOT),
         "--t0",
         request.t0,
         "--snr-threshold",
@@ -375,6 +379,7 @@ def health() -> dict:
         "status": "ok",
         "repo_root": str(REPO_ROOT),
         "results_root": str(RESULTS_ROOT),
+        "gwosc_cache_root": str(GWOSC_CACHE_ROOT),
         "jobs_total": len(jobs),
     }
 
