@@ -134,34 +134,6 @@ body {
   max-width: 70ch;
 }
 
-.hero-actions {
-  margin-top: 0.95rem;
-  display: flex;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.4rem;
-  border-radius: 0.68rem;
-  border: 1px solid var(--line);
-  color: var(--ink);
-  background: #fff;
-  padding: 0.45rem 0.9rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.btn.primary {
-  color: #fff;
-  background: linear-gradient(90deg, var(--brand) 0%, #15807a 100%);
-  border-color: transparent;
-}
-
 .layout {
   margin-top: 0.95rem;
   display: grid;
@@ -484,9 +456,5 @@ ol {
 
   .toc {
     grid-template-columns: 1fr;
-  }
-
-  .hero-actions {
-    flex-direction: column;
   }
 }
