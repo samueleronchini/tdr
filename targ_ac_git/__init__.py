@@ -1,0 +1,1 @@
+"""TDR-GRB targeted detectability range package."""

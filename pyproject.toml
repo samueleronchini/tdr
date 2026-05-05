@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tdr-grb"
+version = "0.1.0"
+description = "Targeted detectability range calculation for GRB-triggered compact-binary searches"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "h5py",
+    "astropy",
+    "healpy",
+    "gwpy",
+    "gwosc",
+    "gwdatafind",
+    "ligo.skymap",
+    "pycbc",
+    "lalsuite",
+    "pandas",
+    "requests",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["targ_ac_git*"]
