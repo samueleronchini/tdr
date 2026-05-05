@@ -47,6 +47,8 @@ body {
   text-decoration: none;
   color: var(--ink);
   font-weight: 700;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .toplinks {
