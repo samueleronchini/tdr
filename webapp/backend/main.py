@@ -21,9 +21,11 @@ from pydantic import BaseModel, Field
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+RESULTS_ROOT = Path(os.getenv("TDR_RESULTS_ROOT", "/Users/sjs8171/Desktop/gw_tdr_results")).resolve()
 RUNS_DIR = REPO_ROOT / "webapp" / "runs"
 UPLOADS_DIR = RUNS_DIR / "uploads"
 
+RESULTS_ROOT.mkdir(parents=True, exist_ok=True)
 RUNS_DIR.mkdir(parents=True, exist_ok=True)
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -56,10 +58,10 @@ def _sanitize_transient_name(raw_name: str) -> str:
 
 def _resolve_output_dir(transient_name: str) -> tuple[str, Path]:
     safe_name = _sanitize_transient_name(transient_name)
-    output_dir = (REPO_ROOT / safe_name).resolve()
+    output_dir = (RESULTS_ROOT / safe_name).resolve()
 
-    if REPO_ROOT not in output_dir.parents and output_dir != REPO_ROOT:
-        raise HTTPException(status_code=400, detail="Output directory must stay within repository root")
+    if RESULTS_ROOT not in output_dir.parents and output_dir != RESULTS_ROOT:
+        raise HTTPException(status_code=400, detail="Output directory must stay within results root")
 
     return safe_name, output_dir
 
@@ -372,6 +374,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "repo_root": str(REPO_ROOT),
+        "results_root": str(RESULTS_ROOT),
         "jobs_total": len(jobs),
     }
 

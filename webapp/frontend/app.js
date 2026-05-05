@@ -1,5 +1,4 @@
 const form = document.getElementById("job-form");
-const apiUrlInput = document.getElementById("api-url");
 const transientNameInput = document.getElementById("transient-name");
 const t0Input = document.getElementById("t0");
 const snrThresholdInput = document.getElementById("snr-threshold");
@@ -24,19 +23,16 @@ const artifactsSection = document.getElementById("artifacts");
 const plotsGallery = document.getElementById("plots-gallery");
 const jsonTableBody = document.getElementById("json-table-body");
 
-const LOCAL_STORAGE_API_KEY = "tdr-web-api-url";
+const HOSTNAME = window.location.hostname || "127.0.0.1";
+const API_BASE = `http://${HOSTNAME}:8000`;
+const IS_GITHUB_PAGES = HOSTNAME.endsWith("github.io");
 
 let currentJobId = null;
 let pollTimer = null;
 const MAX_JSON_ROWS_PER_FILE = 400;
 
-function normalizeApiBase(url) {
-  return (url || "").trim().replace(/\/+$/, "");
-}
-
 function buildApiUrl(path) {
-  const base = normalizeApiBase(apiUrlInput.value);
-  return `${base}${path}`;
+  return `${API_BASE}${path}`;
 }
 
 function setFlash(message, isError = false) {
@@ -108,11 +104,6 @@ function validateFitsFile(file) {
 }
 
 function buildRequestData() {
-  const apiUrl = normalizeApiBase(apiUrlInput.value);
-  if (!apiUrl) {
-    throw new Error("API URL is required");
-  }
-
   const transientName = transientNameInput.value.trim();
   const t0 = t0Input.value.trim();
   const snrThreshold = Number(snrThresholdInput.value);
@@ -159,7 +150,7 @@ function buildRequestData() {
     formData.append("skymap_upload", selectedFile);
   }
 
-  return { apiUrl, formData };
+  return formData;
 }
 
 function artifactPreviewUrl(artifact) {
@@ -361,13 +352,8 @@ async function renderJsonContent(jsonFiles) {
 }
 
 async function loadArtifacts(jobId) {
-  const apiBase = normalizeApiBase(apiUrlInput.value);
-  if (!apiBase) {
-    return null;
-  }
-
   try {
-    return await apiFetch(`${apiBase}/api/jobs/${jobId}/artifacts`);
+    return await apiFetch(`${API_BASE}/api/jobs/${jobId}/artifacts`);
   } catch (err) {
     setFlash(`Artifact loading error: ${err.message}`, true);
     return null;
@@ -483,15 +469,8 @@ async function pollJob() {
     return;
   }
 
-  const apiBase = normalizeApiBase(apiUrlInput.value);
-  if (!apiBase) {
-    setFlash("Missing API URL", true);
-    stopPolling();
-    return;
-  }
-
   try {
-    const job = await apiFetch(`${apiBase}/api/jobs/${currentJobId}`);
+    const job = await apiFetch(`${API_BASE}/api/jobs/${currentJobId}`);
     renderJob(job);
 
     const terminalStates = new Set(["completed", "failed", "cancelled"]);
@@ -509,15 +488,14 @@ async function startJob(event) {
   setFlash("");
 
   try {
-    const { apiUrl, formData } = buildRequestData();
-    localStorage.setItem(LOCAL_STORAGE_API_KEY, apiUrl);
+    const formData = buildRequestData();
 
     setRunningUi(true);
     setStatus("queued");
     logOutput.textContent = "Launching job...";
     clearArtifacts();
 
-    const job = await apiFetch(`${apiUrl}/api/jobs`, {
+    const job = await apiFetch(`${API_BASE}/api/jobs`, {
       method: "POST",
       body: formData,
     });
@@ -540,14 +518,8 @@ async function cancelJob() {
     return;
   }
 
-  const apiBase = normalizeApiBase(apiUrlInput.value);
-  if (!apiBase) {
-    setFlash("Missing API URL", true);
-    return;
-  }
-
   try {
-    await apiFetch(`${apiBase}/api/jobs/${currentJobId}/cancel`, {
+    await apiFetch(`${API_BASE}/api/jobs/${currentJobId}/cancel`, {
       method: "POST",
     });
 
@@ -559,11 +531,6 @@ async function cancelJob() {
 }
 
 function initialize() {
-  const savedApi = localStorage.getItem(LOCAL_STORAGE_API_KEY);
-  if (savedApi) {
-    apiUrlInput.value = savedApi;
-  }
-
   for (const radio of document.querySelectorAll("input[name='localization-mode']")) {
     radio.addEventListener("change", applyLocalizationMode);
   }
@@ -574,6 +541,12 @@ function initialize() {
 
   setStatus("idle");
   clearArtifacts();
+
+  if (IS_GITHUB_PAGES) {
+    setRunningUi(false);
+    runBtn.disabled = true;
+    setFlash("Open this page from the machine web server (http://<machine-ip>:8080). GitHub Pages cannot call the local backend.", true);
+  }
 }
 
 initialize();

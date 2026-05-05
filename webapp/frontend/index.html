@@ -18,8 +18,8 @@
       <p class="eyebrow">TDR Local Compute</p>
       <h1>Run TDR from a web UI</h1>
       <p>
-        Host this page on GitHub Pages and keep calculations on this machine.
-        Set API URL to your local backend, fill parameters, and launch runs.
+        This interface always submits jobs to the backend running on this machine.
+        Fill parameters and launch runs.
       </p>
     </header>
 
@@ -28,11 +28,6 @@
 
       <form id="job-form" novalidate>
         <div class="grid two-cols">
-          <label>
-            API URL
-            <input id="api-url" type="url" value="http://127.0.0.1:8000" required>
-          </label>
-
           <label>
             Transient Name
             <input id="transient-name" type="text" value="GRB_WEB" required>
