@@ -159,6 +159,16 @@ function isDownloadProgressLine(line) {
   return hasPercent && ((hasThroughputToken && hasEtaToken) || hasProgressGlyphs);
 }
 
+function isDownloadChunkLine(line) {
+  const compact = String(line || "").trim();
+  if (!compact) {
+    return false;
+  }
+
+  // Catch chunk-only wget lines like "62000K .........." or "67650K ......".
+  return /^(?:\d+(?:\.\d+)?\s*(?:K|M|G)(?:i?B)?[.\s]+)+$/i.test(compact);
+}
+
 function isDownloadNoiseLine(line) {
   return (
     /--\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}--/.test(line) ||
@@ -166,7 +176,9 @@ function isDownloadNoiseLine(line) {
     /Connecting\s+to\s+gwosc\.org/.test(line) ||
     /HTTP request sent, awaiting response/.test(line) ||
     /Length:\s+\d+/.test(line) ||
-    /Saving to:\s+/.test(line)
+    /Saving to:\s+/.test(line) ||
+    isDownloadChunkLine(line) ||
+    /^[.\s]{8,}$/.test(line)
   );
 }
 
