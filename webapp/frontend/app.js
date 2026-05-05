@@ -23,9 +23,15 @@ const artifactsSection = document.getElementById("artifacts");
 const plotsGallery = document.getElementById("plots-gallery");
 const jsonTableBody = document.getElementById("json-table-body");
 
+function normalizeApiBase(rawBase) {
+  return (rawBase || "").trim().replace(/\/+$/, "");
+}
+
 const HOSTNAME = window.location.hostname || "127.0.0.1";
-const API_BASE = `http://${HOSTNAME}:8000`;
 const IS_GITHUB_PAGES = HOSTNAME.endsWith("github.io");
+const LOCAL_API_BASE = normalizeApiBase(`http://${HOSTNAME}:8000`);
+const CONFIGURED_PUBLIC_API_BASE = normalizeApiBase(window.TDR_WEB_CONFIG?.publicApiBase || "");
+const API_BASE = IS_GITHUB_PAGES ? CONFIGURED_PUBLIC_API_BASE : LOCAL_API_BASE;
 
 let currentJobId = null;
 let pollTimer = null;
@@ -542,10 +548,17 @@ function initialize() {
   setStatus("idle");
   clearArtifacts();
 
-  if (IS_GITHUB_PAGES) {
+  if (!API_BASE) {
     setRunningUi(false);
     runBtn.disabled = true;
-    setFlash("Open this page from the machine web server (http://<machine-ip>:8080). GitHub Pages cannot call the local backend.", true);
+    setFlash("Public backend is not configured. Set a HTTPS URL in runtime-config.js.", true);
+    return;
+  }
+
+  if (window.location.protocol === "https:" && API_BASE.startsWith("http://")) {
+    setRunningUi(false);
+    runBtn.disabled = true;
+    setFlash("Configured backend is HTTP, but this page is HTTPS. Use a HTTPS backend URL.", true);
   }
 }
 
