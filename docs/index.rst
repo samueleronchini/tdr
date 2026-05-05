@@ -1,9 +1,9 @@
-TDR documentation
+Gravitational Wave Targeted Detectability Range (TDR)
 =====================
 
 TDR is a command-line pipeline that estimates the Targeted Detectability
-Range (D90) for compact-binary gravitational-wave signals associated with a GRB
-trigger.
+Range (D90) for compact-binary gravitational-wave signals associated with an astronomical
+transient.
 
 The command line tool is named ``tdr``. It downloads public GWOSC strain data,
 builds detector PSDs, computes SNR-based detectability, and writes plots plus

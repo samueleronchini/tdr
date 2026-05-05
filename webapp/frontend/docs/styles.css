@@ -200,6 +200,31 @@ body {
   margin: 0.35rem 0;
 }
 
+.contents-tree {
+  list-style: none;
+  margin: 0.25rem 0;
+  padding-left: 0;
+}
+
+.contents-tree > li {
+  margin: 0.5rem 0;
+}
+
+.contents-tree ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1rem;
+}
+
+.contents-tree li a {
+  color: var(--brand-deep);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.contents-tree li a:hover {
+  text-decoration: underline;
+}
+
 .label {
   margin-top: 0.65rem;
   color: var(--muted);

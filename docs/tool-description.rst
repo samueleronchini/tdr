@@ -4,9 +4,8 @@ Tool description
 What TDR does
 -------------
 
-The ``tdr`` tool computes targeted detectability ranges for one GRB trigger at
-a time.
-
+The ``tdr`` tool computes targeted detectability ranges for external astronomical triggers, leveraging on the knowleadge of the trigger time and sky location,
+The range is defined as the distance at which 90% of simulated signals would be detected above a given SNR threshold, accounting for the detector sensitivity and the source's sky position.
 For each run, it:
 
 1. identifies the GW observing run from trigger time ``t0``;
