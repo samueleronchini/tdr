@@ -51,6 +51,13 @@ body {
 
 .toplinks {
   display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.toplinks-main {
+  display: flex;
   gap: 0.7rem;
   flex-wrap: wrap;
 }
@@ -70,6 +77,24 @@ body {
   color: #083f43;
   text-decoration: underline;
   text-underline-offset: 0.14em;
+}
+
+.toplinks a.web-runner-tab {
+  margin-left: auto;
+  padding: 0.46rem 0.92rem;
+  border-radius: 999px;
+  border: 1px solid rgba(180, 83, 9, 0.38);
+  background: linear-gradient(90deg, #b45309 0%, #d97706 100%);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 10px 24px rgba(180, 83, 9, 0.28);
+  text-decoration: none;
+}
+
+.toplinks a.web-runner-tab:hover {
+  text-decoration: none;
+  background: linear-gradient(90deg, #9a4708 0%, #b56307 100%);
 }
 
 .page {
@@ -428,7 +453,15 @@ ol {
 
   .topbar {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+  }
+
+  .toplinks {
+    flex-wrap: wrap;
+  }
+
+  .toplinks a.web-runner-tab {
+    margin-left: auto;
   }
 
   .columns {
