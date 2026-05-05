@@ -28,6 +28,7 @@ const LOCAL_STORAGE_API_KEY = "tdr-web-api-url";
 
 let currentJobId = null;
 let pollTimer = null;
+const MAX_JSON_ROWS_PER_FILE = 400;
 
 function normalizeApiBase(url) {
   return (url || "").trim().replace(/\/+$/, "");
@@ -85,24 +86,14 @@ function clearArtifacts() {
   jsonTableBody.innerHTML = "";
 }
 
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes) || bytes < 0) {
-    return "-";
-  }
-  if (bytes < 1024) {
-    return `${bytes} B`;
-  }
-
-  const units = ["KB", "MB", "GB"];
-  let value = bytes / 1024;
-  let unitIndex = 0;
-
-  while (value >= 1024 && unitIndex < units.length - 1) {
-    value = value / 1024;
-    unitIndex += 1;
-  }
-
-  return `${value.toFixed(1)} ${units[unitIndex]}`;
+function addNoArtifactsMessage() {
+  const row = document.createElement("tr");
+  const cell = document.createElement("td");
+  cell.colSpan = 4;
+  cell.textContent = "No JSON products found for this run.";
+  cell.className = "empty-row";
+  row.appendChild(cell);
+  jsonTableBody.appendChild(row);
 }
 
 function validateFitsFile(file) {
@@ -171,6 +162,15 @@ function buildRequestData() {
   return { apiUrl, formData };
 }
 
+function artifactPreviewUrl(artifact) {
+  return buildApiUrl(artifact.url);
+}
+
+function artifactDownloadUrl(artifact) {
+  const separator = artifact.url.includes("?") ? "&" : "?";
+  return buildApiUrl(`${artifact.url}${separator}download=1`);
+}
+
 function setRunningUi(isRunning) {
   runBtn.disabled = isRunning;
   cancelBtn.disabled = !isRunning;
@@ -216,13 +216,184 @@ async function apiFetch(url, options = {}) {
   return bodyParsed;
 }
 
-function renderArtifacts(job) {
+function toDisplayValue(value) {
+  if (value === null) {
+    return "null";
+  }
+
+  if (typeof value === "string") {
+    return value.length > 180 ? `${value.slice(0, 177)}...` : value;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  const asText = JSON.stringify(value);
+  if (asText === undefined) {
+    return "";
+  }
+
+  return asText.length > 180 ? `${asText.slice(0, 177)}...` : asText;
+}
+
+function flattenJson(value, prefix = "") {
+  const rows = [];
+
+  if (value === null || typeof value !== "object") {
+    rows.push({ key: prefix || "(value)", value: toDisplayValue(value) });
+    return rows;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      rows.push({ key: prefix || "(array)", value: "[]" });
+      return rows;
+    }
+
+    value.forEach((item, index) => {
+      const childKey = prefix ? `${prefix}[${index}]` : `[${index}]`;
+      rows.push(...flattenJson(item, childKey));
+    });
+    return rows;
+  }
+
+  const keys = Object.keys(value);
+  if (keys.length === 0) {
+    rows.push({ key: prefix || "(object)", value: "{}" });
+    return rows;
+  }
+
+  for (const key of keys) {
+    const childKey = prefix ? `${prefix}.${key}` : key;
+    const child = value[key];
+    if (child !== null && typeof child === "object") {
+      rows.push(...flattenJson(child, childKey));
+    } else {
+      rows.push({ key: childKey, value: toDisplayValue(child) });
+    }
+  }
+
+  return rows;
+}
+
+function appendJsonRows(artifact, rows, truncated) {
+  const downloadUrl = artifactDownloadUrl(artifact);
+
+  rows.forEach((item) => {
+    const row = document.createElement("tr");
+
+    const fileCell = document.createElement("td");
+    fileCell.textContent = artifact.relative_path;
+
+    const keyCell = document.createElement("td");
+    keyCell.textContent = item.key;
+
+    const valueCell = document.createElement("td");
+    valueCell.className = "value-cell";
+    valueCell.textContent = item.value;
+
+    const downloadCell = document.createElement("td");
+    const downloadLink = document.createElement("a");
+    downloadLink.href = downloadUrl;
+    downloadLink.target = "_blank";
+    downloadLink.rel = "noopener noreferrer";
+    downloadLink.textContent = "Download";
+    downloadCell.appendChild(downloadLink);
+
+    row.appendChild(fileCell);
+    row.appendChild(keyCell);
+    row.appendChild(valueCell);
+    row.appendChild(downloadCell);
+    jsonTableBody.appendChild(row);
+  });
+
+  if (truncated) {
+    const truncRow = document.createElement("tr");
+    const truncCell = document.createElement("td");
+    truncCell.colSpan = 4;
+    truncCell.className = "empty-row";
+    truncCell.textContent = `Rows truncated for ${artifact.relative_path}.`;
+    truncRow.appendChild(truncCell);
+    jsonTableBody.appendChild(truncRow);
+  }
+}
+
+async function renderJsonContent(jsonFiles) {
+  if (jsonFiles.length === 0) {
+    addNoArtifactsMessage();
+    return;
+  }
+
+  for (const artifact of jsonFiles) {
+    const url = artifactPreviewUrl(artifact);
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const text = await response.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        appendJsonRows(
+          artifact,
+          [{ key: "(raw)", value: text.length > 180 ? `${text.slice(0, 177)}...` : text }],
+          false,
+        );
+        continue;
+      }
+
+      const flatRows = flattenJson(parsed);
+      const limitedRows = flatRows.slice(0, MAX_JSON_ROWS_PER_FILE);
+      const truncated = flatRows.length > MAX_JSON_ROWS_PER_FILE;
+      appendJsonRows(artifact, limitedRows, truncated);
+    } catch (err) {
+      appendJsonRows(
+        artifact,
+        [{ key: "(error)", value: `Unable to load JSON content: ${err.message}` }],
+        false,
+      );
+    }
+  }
+}
+
+async function loadArtifacts(jobId) {
+  const apiBase = normalizeApiBase(apiUrlInput.value);
+  if (!apiBase) {
+    return null;
+  }
+
+  try {
+    return await apiFetch(`${apiBase}/api/jobs/${jobId}/artifacts`);
+  } catch (err) {
+    setFlash(`Artifact loading error: ${err.message}`, true);
+    return null;
+  }
+}
+
+async function renderArtifacts(job) {
   clearArtifacts();
 
-  const plotFiles = Array.isArray(job.plot_files) ? job.plot_files : [];
-  const jsonFiles = Array.isArray(job.json_files) ? job.json_files : [];
+  const artifactsPayload = await loadArtifacts(job.job_id);
+
+  const fallbackPlotFiles = Array.isArray(job.plot_files) ? job.plot_files : [];
+  const fallbackJsonFiles = Array.isArray(job.json_files) ? job.json_files : [];
+
+  const plotFiles =
+    artifactsPayload && Array.isArray(artifactsPayload.plot_files)
+      ? artifactsPayload.plot_files
+      : fallbackPlotFiles;
+  const jsonFiles =
+    artifactsPayload && Array.isArray(artifactsPayload.json_files)
+      ? artifactsPayload.json_files
+      : fallbackJsonFiles;
 
   if (plotFiles.length === 0 && jsonFiles.length === 0) {
+    addNoArtifactsMessage();
+    artifactsSection.hidden = false;
     return;
   }
 
@@ -236,7 +407,8 @@ function renderArtifacts(job) {
     title.textContent = artifact.relative_path;
     card.appendChild(title);
 
-    const url = buildApiUrl(artifact.url);
+    const url = artifactPreviewUrl(artifact);
+    const downloadUrl = artifactDownloadUrl(artifact);
     const ext = (artifact.name || "").toLowerCase();
 
     if (ext.endsWith(".pdf")) {
@@ -254,38 +426,29 @@ function renderArtifacts(job) {
       card.appendChild(img);
     }
 
+    const actionBox = document.createElement("div");
+    actionBox.className = "artifact-actions";
+
     const openLink = document.createElement("a");
     openLink.href = url;
     openLink.target = "_blank";
     openLink.rel = "noopener noreferrer";
-    openLink.textContent = "Open plot";
-    card.appendChild(openLink);
+    openLink.textContent = "Open";
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = downloadUrl;
+    downloadLink.target = "_blank";
+    downloadLink.rel = "noopener noreferrer";
+    downloadLink.textContent = "Download";
+
+    actionBox.appendChild(openLink);
+    actionBox.appendChild(downloadLink);
+    card.appendChild(actionBox);
 
     plotsGallery.appendChild(card);
   }
 
-  for (const artifact of jsonFiles) {
-    const row = document.createElement("tr");
-
-    const nameCell = document.createElement("td");
-    nameCell.textContent = artifact.relative_path;
-
-    const sizeCell = document.createElement("td");
-    sizeCell.textContent = formatBytes(artifact.size_bytes);
-
-    const openCell = document.createElement("td");
-    const link = document.createElement("a");
-    link.href = buildApiUrl(artifact.url);
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    link.textContent = "Open";
-    openCell.appendChild(link);
-
-    row.appendChild(nameCell);
-    row.appendChild(sizeCell);
-    row.appendChild(openCell);
-    jsonTableBody.appendChild(row);
-  }
+  await renderJsonContent(jsonFiles);
 }
 
 function renderJob(job) {
@@ -311,7 +474,7 @@ function renderJob(job) {
   }
 
   if (job.status === "completed") {
-    renderArtifacts(job);
+    void renderArtifacts(job);
   }
 }
 

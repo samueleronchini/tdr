@@ -1,0 +1,82 @@
+{
+    "nsbh": {
+        "m1=5, m2=1": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "eos_average": true,
+            "eos_used": [
+                "SFHo",
+                "DD2"
+            ],
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 151.56853131686694
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 72.97539431981045
+                }
+            }
+        },
+        "m1=10, m2=1.4": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "eos_average": true,
+            "eos_used": [
+                "SFHo",
+                "DD2"
+            ],
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 228.13966153788976
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 106.61324915949415
+                }
+            }
+        },
+        "m1=20, m2=2.0": {
+            "online_ifos": [
+                "H1",
+                "L1",
+                "V1"
+            ],
+            "snr_type": "matched_filter",
+            "snr_threshold": 8.5,
+            "eos_average": true,
+            "eos_used": [
+                "SFHo",
+                "DD2"
+            ],
+            "tdr": {
+                "0-45": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 45.0,
+                    "D90_Mpc": 351.3778278110425
+                },
+                "0-90": {
+                    "iota_min_deg": 0.0,
+                    "iota_max_deg": 90.0,
+                    "D90_Mpc": 162.8205802346257
+                }
+            }
+        }
+    }
+}

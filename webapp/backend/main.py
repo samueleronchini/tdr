@@ -492,7 +492,7 @@ def get_job_artifacts(job_id: str) -> dict:
 
 
 @app.get("/api/jobs/{job_id}/artifacts/{artifact_path:path}")
-def get_job_artifact(job_id: str, artifact_path: str):
+def get_job_artifact(job_id: str, artifact_path: str, download: bool = False):
     state = _get_job(job_id)
 
     requested_file = (state.output_dir / artifact_path).resolve()
@@ -503,7 +503,20 @@ def get_job_artifact(job_id: str, artifact_path: str):
         raise HTTPException(status_code=404, detail="Artifact not found")
 
     media_type = mimetypes.guess_type(str(requested_file))[0]
-    return FileResponse(path=str(requested_file), media_type=media_type, filename=requested_file.name)
+    if download:
+        return FileResponse(
+            path=str(requested_file),
+            media_type=media_type,
+            filename=requested_file.name,
+            content_disposition_type="attachment",
+        )
+
+    return FileResponse(
+        path=str(requested_file),
+        media_type=media_type,
+        filename=requested_file.name,
+        content_disposition_type="inline",
+    )
 
 
 @app.post("/api/jobs/{job_id}/cancel")
