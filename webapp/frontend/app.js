@@ -557,6 +557,21 @@ async function fetchJsonArtifact(artifact) {
   }
 }
 
+async function detectNoDetectorsArtifact(jobId) {
+  if (!jobId) {
+    return false;
+  }
+
+  const url = buildApiUrl(`/api/jobs/${jobId}/artifacts/no_detectors_available.txt`);
+
+  try {
+    const response = await fetch(url, { cache: "no-store" });
+    return response.ok;
+  } catch (_err) {
+    return false;
+  }
+}
+
 function extractTdrRows(resultsJson, sourceKey) {
   const source = resultsJson && typeof resultsJson === "object" ? resultsJson[sourceKey] : null;
   if (!source || typeof source !== "object") {
@@ -1096,7 +1111,9 @@ async function loadArtifacts(jobId) {
 async function renderArtifacts(job, options = {}) {
   clearArtifacts();
 
-  const noDetectorsAtT0 = Boolean(options.noDetectorsAtT0);
+  const noDetectorsFromLog = Boolean(options.noDetectorsAtT0);
+  const noDetectorsFromArtifact = await detectNoDetectorsArtifact(job?.job_id);
+  const noDetectorsAtT0 = noDetectorsFromLog || noDetectorsFromArtifact;
 
   const artifactsPayload = await loadArtifacts(job.job_id);
 
