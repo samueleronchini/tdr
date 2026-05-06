@@ -91,6 +91,7 @@ a:hover {
   padding: 0.55rem 1rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.9rem;
 }
 
@@ -102,33 +103,7 @@ a:hover {
   white-space: nowrap;
 }
 
-.toplinks-main {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.65rem;
-}
-
-.toplinks-main a {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  font-size: 0.92rem;
-  font-weight: 400;
-  border-bottom: 2px solid transparent;
-  padding: 0.34rem 0.2rem;
-}
-
-.toplinks-main a:hover {
-  color: #ffffff;
-}
-
-.toplinks-main a.active {
-  color: #ffffff;
-  border-bottom-color: #ffffff;
-}
-
 .web-runner-tab {
-  margin-left: auto;
   color: #ffffff;
   text-decoration: none;
   font-size: 0.83rem;
@@ -511,21 +486,7 @@ ol {
 
 @media (max-width: 1120px) {
   .topbar-inner {
-    flex-wrap: wrap;
-  }
-
-  .brand {
-    flex: 1 1 auto;
-  }
-
-  .toplinks-main {
-    order: 3;
-    width: 100%;
-    gap: 0.5rem 0.9rem;
-  }
-
-  .web-runner-tab {
-    margin-left: auto;
+    min-height: 3.45rem;
   }
 
   .docs-shell {
@@ -556,15 +517,8 @@ ol {
 
 @media (max-width: 760px) {
   .topbar-inner {
+    min-height: 3.3rem;
     gap: 0.6rem;
-  }
-
-  .brand {
-    flex: 1 1 100%;
-  }
-
-  .web-runner-tab {
-    margin-left: 0;
   }
 
   .columns {
@@ -589,10 +543,6 @@ ol {
   .hero,
   .card {
     padding: 0.85rem 0.88rem;
-  }
-
-  .toplinks-main a {
-    font-size: 0.86rem;
   }
 
   .theme-toggle {

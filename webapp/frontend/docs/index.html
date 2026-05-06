@@ -14,12 +14,6 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="./">GW TDR Docs</a>
-      <nav class="toplinks-main" aria-label="Top links">
-        <a class="active" href="./">Intro</a>
-        <a href="./installation.html">Installation</a>
-        <a href="./usage.html">Usage and example of use</a>
-        <a href="https://github.com/samueleronchini/gw_tdr" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </nav>
       <a class="web-runner-tab" href="../">Web Runner</a>
     </div>
   </header>
@@ -42,8 +36,8 @@
         <p class="eyebrow">Intro</p>
         <h1>GW targeted detectability range</h1>
         <p>
-          The <code>tdr</code> tool computes the gravitational wave (GW) targeted detectability range (D<sub>90</sub>) for external astronomical
-          triggers, using trigger time and sky localization together with GW detector sensitivity, under the assumption that the signal is a binary neutron star or black hole-neutron star merger.
+          The targeted detectability range (TDR) tool computes the gravitational wave (GW) range (D<sub>90</sub>) targeted on external astronomical
+          triggers, under the assumption that it is associated with a binary neutron star or black hole-neutron star merger. The TDR leverages the trigger time and sky localization of the transient and computes the GW detection probability using the sensitivity of each interferometer online at the time of the trigger.
         </p>
       </section>
 
@@ -51,7 +45,7 @@
         <section id="overview" class="card">
           <h2>What TDR does</h2>
           <p>
-            The range is defined as the distance at which 90% of simulated signals are detected above
+            The targeted range D<sub>90</sub> is defined as the distance at which 90% of simulated signals are detected above
             a chosen SNR threshold, accounting for detector sensitivity and source sky position.
           </p>
           <p>The tool supports localization through RA/DEC or HEALPix FITS sky maps.</p>
@@ -64,7 +58,7 @@
             <li>Check <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a> data availability for H1/L1/V1.</li>
             <li>Download a 256 s strain segment around the trigger from <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a>.</li>
             <li>Estimate PSDs for available detectors.</li>
-            <li>Generate BNS and NSBH injections with <a href="https://pycbc.org" target="_blank" rel="noopener noreferrer">PyCBC</a>.</li>
+            <li>Generate BNS and NSBH injections with <a href="https://pycbc.org" target="_blank" rel="noopener noreferrer">PyCBC</a>.</li>, for a set of component masses and inclination angle $\iota$.
             <li>Compute SNRs and D<sub>90</sub> targeted range values.</li>
             <li>Produce plots, sky maps, and JSON result files.</li>
           </ol>
