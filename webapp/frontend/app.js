@@ -248,6 +248,14 @@ function sanitizeLogLines(logTail, commandLine) {
   return cleanLines.length > 0 ? cleanLines : ["No log lines yet."];
 }
 
+function hasNoDetectorsAtT0(logTail) {
+  if (!Array.isArray(logTail) || logTail.length === 0) {
+    return false;
+  }
+
+  return logTail.some((line) => /no detectors available after successful GWOSC checks/i.test(String(line || "")));
+}
+
 function buildApiUrl(path) {
   return `${API_BASE}${path}`;
 }
@@ -1023,7 +1031,7 @@ async function renderPlotCards(plotFiles) {
   }
 }
 
-async function renderResultsTables(jsonFiles) {
+async function renderResultsTables(jsonFiles, noDetectorsAtT0 = false) {
   clearTableBody(bnsResultsBody);
   clearTableBody(nsbhResultsBody);
 
@@ -1042,6 +1050,9 @@ async function renderResultsTables(jsonFiles) {
 
   if (ifosPayload.data) {
     updateIfoLine(ifosPayload.data);
+  } else if (noDetectorsAtT0) {
+    ifosLine.hidden = false;
+    ifosOnline.textContent = "No detectors available at t0";
   } else {
     ifosLine.hidden = true;
   }
@@ -1082,8 +1093,10 @@ async function loadArtifacts(jobId) {
   }
 }
 
-async function renderArtifacts(job) {
+async function renderArtifacts(job, options = {}) {
   clearArtifacts();
+
+  const noDetectorsAtT0 = Boolean(options.noDetectorsAtT0);
 
   const artifactsPayload = await loadArtifacts(job.job_id);
 
@@ -1103,7 +1116,7 @@ async function renderArtifacts(job) {
   artifactsSection.hidden = false;
 
   await renderPlotCards(plotFiles);
-  await renderResultsTables(jsonFiles);
+  await renderResultsTables(jsonFiles, noDetectorsAtT0);
 }
 
 function renderJob(job) {
@@ -1119,6 +1132,8 @@ function renderJob(job) {
   jobCommand.textContent = inputSummary || sanitizeDisplayText(job.command || "-");
   jobOutputDir.textContent = sanitizeDisplayText(job.output_dir || "-");
 
+  const noDetectorsAtT0 = hasNoDetectorsAtT0(job.log_tail);
+
   if (Array.isArray(job.log_tail) && job.log_tail.length > 0) {
     const cleanLogLines = sanitizeLogLines(job.log_tail, job.command || "");
     logOutput.textContent = cleanLogLines.join("\n");
@@ -1131,8 +1146,8 @@ function renderJob(job) {
     stopPolling();
   }
 
-  if (job.status === "completed") {
-    void renderArtifacts(job);
+  if (job.status === "completed" || job.status === "failed") {
+    void renderArtifacts(job, { noDetectorsAtT0 });
   }
 }
 
