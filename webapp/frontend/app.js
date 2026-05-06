@@ -232,6 +232,11 @@ function sanitizeLogLines(logTail, commandLine) {
       continue;
     }
 
+    if (/no detectors available after successful GWOSC checks/i.test(line)) {
+      cleanLines.push("No detectors available at t0.");
+      continue;
+    }
+
     cleanLines.push(line);
   }
 
@@ -692,8 +697,8 @@ function updateIfoLine(ifosPayload) {
   const onlineIfos = used.length > 0 ? used : available;
 
   if (onlineIfos.length === 0) {
-    ifosLine.hidden = true;
-    ifosOnline.textContent = "-";
+    ifosLine.hidden = false;
+    ifosOnline.textContent = "No detectors available at t0";
     return;
   }
 
