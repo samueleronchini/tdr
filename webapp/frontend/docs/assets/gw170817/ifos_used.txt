@@ -1,0 +1,2 @@
+IFOs with available strain data: H1,L1,V1
+IFOs used in the analysis:      H1,L1,V1

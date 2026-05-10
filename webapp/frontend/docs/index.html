@@ -37,18 +37,23 @@
         <h1>GW targeted detectability range</h1>
         <p>
           The targeted detectability range (TDR) tool computes the gravitational wave (GW) range (D<sub>90</sub>) targeted on external astronomical
-          triggers, under the assumption that it is associated with a binary neutron star or black hole-neutron star merger. The TDR leverages the trigger time and sky localization of the transient and computes the GW detection probability using the sensitivity of each interferometer online at the time of the trigger.
+          triggers, under the assumption that it is associated with a binary neutron star (BNS) or black hole-neutron star merger (NSBH). The TDR leverages the trigger time and sky localization of the transient and computes the GW detection probability using the sensitivity of each interferometer online at the time of the trigger.
         </p>
       </section>
 
       <article class="content">
         <section id="overview" class="card">
-          <h2>What TDR does</h2>
+          <h2>How TDR is computed</h2>
           <p>
             The targeted range D<sub>90</sub> is defined as the distance at which 90% of simulated signals are detected above
             a chosen SNR threshold, accounting for detector sensitivity and source sky position.
           </p>
-          <p>The tool supports localization through RA/DEC or HEALPix FITS sky maps.</p>
+          <p>The tool computes the detection probability using localization through RA/DEC or HEALPix FITS sky maps. In order to compute the noise power spectral density of each GW interferometer online at the trigger time, the tool makes use of the strain data publicly available on <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a>. For BNS (NSBH) signals, the TaylorT4 (IMRPhenomNSBH) waveform is adopted. By default, injections are done for the following mass combinations:</p>
+          <ul>
+            <li><strong>BNS:</strong> m1, m2 = 1.0 - 1.0 M<sub>☉</sub>, 1.4 - 1.4 M<sub>☉</sub>, 2.0 - 2.0 M<sub>☉</sub> </li>
+            <li><strong>NSBH:</strong> m1, m2 = 5.0 - 1.0 M<sub>☉</sub>, 10 - 1.4 M<sub>☉</sub>, 20 - 2.0 M<sub>☉</sub> </li>
+          </ul>
+          <p>For NSBH signals, tidal deformability is computed using the SFHo and DD2 equations of state, and the reported TDR is the average of the two results. Users can choose the binary inclination angle range. Detection probability is computed using both optimal SNR and matched-filter SNR, and the TDR can be derived from either metric.</p>
         </section>
 
         <section id="workflow" class="card">
@@ -58,7 +63,7 @@
             <li>Check <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a> data availability for H1/L1/V1.</li>
             <li>Download a 256 s strain segment around the trigger from <a href="https://gwosc.org" target="_blank" rel="noopener noreferrer">GWOSC</a>.</li>
             <li>Estimate PSDs for available detectors.</li>
-            <li>Generate BNS and NSBH injections with <a href="https://pycbc.org" target="_blank" rel="noopener noreferrer">PyCBC</a>.</li>, for a set of component masses and inclination angle $\iota$.
+            <li>Generate BNS and NSBH injections with <a href="https://pycbc.org" target="_blank" rel="noopener noreferrer">PyCBC</a>, for a set of component masses and inclination angle <i>&iota;</i>.</li>
             <li>Compute SNRs and D<sub>90</sub> targeted range values.</li>
             <li>Produce plots, sky maps, and JSON result files.</li>
           </ol>

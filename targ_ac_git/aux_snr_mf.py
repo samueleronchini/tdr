@@ -590,12 +590,12 @@ def plot_final(output_dir, range_map, skymap, samples, iota_min, iota_max):
 
     if len(samples[0]) == 1:
         ax.scatter(ra_samples, dec_samples, marker="x", color="black", s=100, transform=ax.get_transform("icrs"), linewidths=1.5, zorder=2)
-        black_handles = [Line2D([0], [0], color="black", marker="x", linestyle="None", markersize=9, markeredgewidth=1.5, label="GRB position")]
+        black_handles = [Line2D([0], [0], color="black", marker="x", linestyle="None", markersize=9, markeredgewidth=1.5, label="EXT POS")]
     else:
         ax.scatter(ra_samples, dec_samples, marker="x", color="gray", s=0.2, transform=ax.get_transform("icrs"), linewidths=0.2, alpha=1, zorder=1)
         black_handles = [
-            Line2D([0], [0], color="black", linestyle="dashed", linewidth=2.2, label="GRB 50%"),
-            Line2D([0], [0], color="black", linestyle="solid", linewidth=2.2, label="GRB 90%"),
+            Line2D([0], [0], color="black", linestyle="dashed", linewidth=2.2, label="EXT POS 50%"),
+            Line2D([0], [0], color="black", linestyle="solid", linewidth=2.2, label="EXT POS 90%"),
         ]
 
     vmin, vmax = np.nanmin(hpx), np.nanmax(hpx)

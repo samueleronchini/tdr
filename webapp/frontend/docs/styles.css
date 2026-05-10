@@ -344,8 +344,6 @@ th {
   font-size: 0.77rem;
   font-weight: 500;
   color: var(--md-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .command-options-table th:first-child,

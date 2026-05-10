@@ -116,12 +116,13 @@
           <p><strong>Default iota ranges:</strong> 0-45 deg and 0-90 deg.</p>
         </section>
 
-        <section id="plots" class="card">
+        <section id="plots" class="card" style="font-size: 0.9rem;">
           <h2>All plots returned by the code</h2>
 
           <div class="doc-plots-grid">
             <article class="doc-plot-card">
               <h3>psd_plot.pdf</h3>
+              <p>Power spectral density curves for each interferometer online at the time of the trigger, showing detector noise versus frequency.</p>
               <div class="doc-plot-frame-wrap">
                 <img class="doc-plot-image" src="./assets/gw170817/psd_plot.png?v=20260505hr" loading="lazy" alt="PSD plot" />
               </div>
@@ -133,6 +134,7 @@
 
             <article class="doc-plot-card">
               <h3>bns_targeted_range.pdf</h3>
+              <p> Detection probability for a BNS system as a function of distance, expressed as fraction of detected events with SNR above the chosen threshold.</p>
               <div class="doc-plot-frame-wrap">
                 <img class="doc-plot-image" src="./assets/gw170817/bns_targeted_range.png?v=20260505hr" loading="lazy" alt="BNS targeted range" />
               </div>
@@ -144,6 +146,7 @@
 
             <article class="doc-plot-card">
               <h3>nsbh_targeted_range.pdf</h3>
+              <p> Detection probability for an NSBH system as a function of distance, expressed as fraction of detected events with SNR above the chosen threshold.</p>
               <div class="doc-plot-frame-wrap">
                 <img class="doc-plot-image" src="./assets/gw170817/nsbh_targeted_range.png?v=20260505hr" loading="lazy" alt="NSBH targeted range" />
               </div>
@@ -155,6 +158,7 @@
 
             <article class="doc-plot-card">
               <h3>range_map_bns_m1_1.4_m2_1.4.pdf</h3>
+              <p>Sky map of TDR for a 1.4-1.4 M<sub>☉</sub> BNS source, assuming an inclination angle between 0 and 45 degrees. The position of the astronomical transient is indicated.</p>
               <div class="doc-plot-frame-wrap">
                 <img class="doc-plot-image" src="./assets/gw170817/range_map_bns_m1_1.4_m2_1.4.png?v=20260505hr" loading="lazy" alt="Range map BNS" />
               </div>
@@ -167,10 +171,10 @@
         </section>
 
         <section id="tables" class="card">
-          <h2>Results tables (default 0-45 and 0-90 deg)</h2>
+          <h2>Results tables (default <i>&iota;</i> &in; 0° - 45° and 0° - 90°)</h2>
 
           <h3 class="results-headline">
-            <span>BNS (results_bns.json)</span>
+            <span>BNS</span>
             <a class="results-json-link" href="./assets/gw170817/results_bns.json" download>Download JSON</a>
           </h3>
           <div class="table-wrap">
@@ -178,20 +182,20 @@
               <thead>
                 <tr>
                   <th>Mass Combination</th>
-                  <th>D<sub>90</sub> 0-45 deg (Mpc)</th>
-                  <th>D<sub>90</sub> 0-90 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0° - 45° (Mpc)</th>
+                  <th>D<sub>90</sub> 0° - 90° (Mpc)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>m1=1, m2=1</td><td>73.224</td><td>39.250</td></tr>
-                <tr><td>m1=1.4, m2=1.4</td><td>95.031</td><td>48.565</td></tr>
-                <tr><td>m1=2.0, m2=2.0</td><td>126.309</td><td>61.334</td></tr>
+                <tr><td>M_1, M_2 = [1.0,1.0] M<sub>☉</sub></td><td>73.2</td><td>39.3</td></tr>
+                <tr><td>M_1, M_2 = [1.4,1.4] M<sub>☉</sub></td><td>95.0</td><td>48.6</td></tr>
+                <tr><td>M_1, M_2 = [2.0,2.0] M<sub>☉</sub></td><td>126.3</td><td>61.3</td></tr>
               </tbody>
             </table>
           </div>
 
           <h3 class="results-headline">
-            <span>NSBH (results_nsbh.json)</span>
+            <span>NSBH</span>
             <a class="results-json-link" href="./assets/gw170817/results_nsbh.json" download>Download JSON</a>
           </h3>
           <div class="table-wrap">
@@ -199,14 +203,14 @@
               <thead>
                 <tr>
                   <th>Mass Combination</th>
-                  <th>D<sub>90</sub> 0-45 deg (Mpc)</th>
-                  <th>D<sub>90</sub> 0-90 deg (Mpc)</th>
+                  <th>D<sub>90</sub> 0° - 45° (Mpc)</th>
+                  <th>D<sub>90</sub> 0° - 90° (Mpc)</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td>m1=5, m2=1</td><td>126.633</td><td>61.964</td></tr>
-                <tr><td>m1=10, m2=1.4</td><td>189.957</td><td>89.382</td></tr>
-                <tr><td>m1=20, m2=2.0</td><td>294.825</td><td>135.105</td></tr>
+                <tr><td>M_1, M_2 = [5.0,1.0] M<sub>☉</sub></td><td>126.6</td><td>62.0</td></tr>
+                <tr><td>M_1, M_2 = [10.0,1.4] M<sub>☉</sub></td><td>190.0</td><td>89.4</td></tr>
+                <tr><td>M_1, M_2 = [20.0,2.0] M<sub>☉</sub></td><td>294.8</td><td>135.1</td></tr>
               </tbody>
             </table>
           </div>

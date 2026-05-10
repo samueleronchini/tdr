@@ -535,6 +535,15 @@ function formatNumber(value, digits = 3) {
   return num.toFixed(digits).replace(/\.0+$/, "").replace(/(\.\d*?)0+$/, "$1");
 }
 
+function formatFixedDecimals(value, digits = 1) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) {
+    return "-";
+  }
+
+  return num.toFixed(digits);
+}
+
 function findJsonArtifact(jsonFiles, fileName) {
   return (jsonFiles || []).find((artifact) => artifact?.name === fileName) || null;
 }
@@ -609,7 +618,7 @@ function extractTdrRows(resultsJson, sourceKey) {
       rows.push({
         mass: massKey,
         iotaLabel,
-        d90: formatNumber(tdrItem?.D90_Mpc, 3),
+        d90: formatFixedDecimals(tdrItem?.D90_Mpc, 1),
       });
     }
   }
@@ -629,6 +638,18 @@ function normalizeIotaLabel(rawLabel) {
   }
 
   return `${formatNumber(Number(match[1]), 1)}-${formatNumber(Number(match[2]), 1)}`;
+}
+
+function formatMassLabel(rawMass) {
+  const source = String(rawMass || "").trim();
+  const match = source.match(/^m1\s*=\s*([0-9.]+)\s*,\s*m2\s*=\s*([0-9.]+)$/i);
+  if (!match) {
+    return sanitizeDisplayText(source || "-");
+  }
+
+  const m1 = formatNumber(Number(match[1]), 1);
+  const m2 = formatNumber(Number(match[2]), 1);
+  return `M_1, M_2 = [${m1},${m2}] M<sub>☉</sub>`;
 }
 
 function pickDisplayAngleColumns(rows) {
@@ -689,7 +710,7 @@ function renderResultRows(thead, tbody, rows) {
     const row = document.createElement("tr");
 
     const massCell = document.createElement("td");
-    massCell.textContent = mass;
+    massCell.innerHTML = formatMassLabel(mass);
     row.appendChild(massCell);
 
     const values = matrix.get(mass) || new Map();
