@@ -311,7 +311,7 @@ def choose_localization_samples(ra, dec, skymap_file, ra_max, dec_max):
     return [ra_max], [dec_max], None
 
 
-def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_type):
+def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, log_file, iota_ranges, map_iota_min, map_iota_max, snr_threshold, snr_type):
     os.makedirs(output_dir, exist_ok=True)
 
     logger = setup_logger(log_file)
@@ -347,9 +347,6 @@ def run_single_trigger(t_center, output_dir, ra, dec, skymap_file, cache_dir, lo
     logger.info(f"{os.path.basename(output_dir)}: finished plot_psd")
 
     ra_max, dec_max = create_injections_and_snr(t_center, online_ifos, output_dir, logger)
-
-    map_iota_min = iota_ranges[0]["iota_min"]
-    map_iota_max = iota_ranges[0]["iota_max"]
 
     logger.info(f"{os.path.basename(output_dir)}: starting compute_map")
     range_map = compute_map("bns", "1.4", "1.4", online_ifos, output_dir, map_iota_min, map_iota_max, snr_threshold, snr_type)
@@ -420,6 +417,13 @@ def targ_range(args=None):
     snr_type = parse_snr_type(args.snr_type)
     iota_ranges = parse_iota_ranges(args.iota_min, args.iota_max)
 
+    if args.iota_min is None and args.iota_max is None:
+        map_iota_min = 0.0
+        map_iota_max = np.pi / 4
+    else:
+        map_iota_min = np.radians(float(args.iota_min))
+        map_iota_max = np.radians(float(args.iota_max))
+
     start_time = time.time()
 
     os.makedirs(args.output_dir, exist_ok=True)
@@ -456,7 +460,7 @@ def targ_range(args=None):
     print("RUNNING SINGLE-TRIGGER ANALYSIS", flush=True)
 
     try:
-        run_single_trigger(t0, args.output_dir, args.ra, args.dec, args.skymap_file, cache_dir, log_file, iota_ranges, snr_threshold, snr_type)
+        run_single_trigger(t0, args.output_dir, args.ra, args.dec, args.skymap_file, cache_dir, log_file, iota_ranges, map_iota_min, map_iota_max, snr_threshold, snr_type)
     except Exception as e:
         print(f"FAILED: {e}", flush=True)
         with open(os.path.join(args.output_dir, "analysis_failed.txt"), "w") as f:

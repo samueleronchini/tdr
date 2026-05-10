@@ -36,8 +36,8 @@
         <p class="eyebrow">Intro</p>
         <h1>GW targeted detectability range</h1>
         <p>
-          The targeted detectability range (TDR) tool computes the gravitational wave (GW) range (D<sub>90</sub>) targeted on external astronomical
-          triggers, under the assumption that it is associated with a binary neutron star (BNS) or black hole-neutron star merger (NSBH). The TDR leverages the trigger time and sky localization of the transient and computes the GW detection probability using the sensitivity of each interferometer online at the time of the trigger.
+          The targeted detectability range (TDR) tool computes the gravitational wave (GW) range (D<sub>90</sub>) targeted on a given external astronomical
+          trigger, under the assumption that it is associated with a binary neutron star (BNS) or black hole-neutron star merger (NSBH). The TDR leverages the trigger time and sky localization of the transient and computes the GW detection probability using the sensitivity of each interferometer online at the time of the trigger.
         </p>
       </section>
 
@@ -53,7 +53,9 @@
             <li><strong>BNS:</strong> m1, m2 = 1.0 - 1.0 M<sub>☉</sub>, 1.4 - 1.4 M<sub>☉</sub>, 2.0 - 2.0 M<sub>☉</sub> </li>
             <li><strong>NSBH:</strong> m1, m2 = 5.0 - 1.0 M<sub>☉</sub>, 10 - 1.4 M<sub>☉</sub>, 20 - 2.0 M<sub>☉</sub> </li>
           </ul>
-          <p>For NSBH signals, tidal deformability is computed using the SFHo and DD2 equations of state, and the reported TDR is the average of the two results. Users can choose the binary inclination angle range. Detection probability is computed using both optimal SNR and matched-filter SNR, and the TDR can be derived from either metric.</p>
+          <p>For NSBH signals, the tidal deformability is computed using the SFHo and DD2 equations of state, and the reported TDR is the average of the two results.
+             Users can choose the range of the binary inclination angle <i>&iota;</i>. By default, the tool assumes the ranges <i>0° ≤ &iota; ≤ 45°</i> and <i>0° ≤ &iota; ≤ 90°</i>.
+              Detection probability is computed using both optimal SNR and matched-filter SNR, and the TDR can be derived from either metric.</p>
         </section>
 
         <section id="workflow" class="card">
