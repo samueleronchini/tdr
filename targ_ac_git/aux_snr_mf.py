@@ -61,7 +61,7 @@ def sample_isotropic_iota(iota_min, iota_max, size):
 def build_injection_config(cbc_type, t0, position, m1, m2, iota, eos="SFHo"):
     """Return a PyCBC injection configuration string for a BNS or NSBH system."""
     if cbc_type == "bns":
-        waveform = "TaylorT4"
+        waveform = "TaylorF2"
         extra_params = """
 spin1x = 0
 spin1y = 0
