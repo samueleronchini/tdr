@@ -43,7 +43,8 @@ THETA_PIX, PHI_PIX = hp.pix2ang(NSIDE, np.arange(NPIX), nest=True)
 RA_PIX = np.degrees(PHI_PIX)
 DEC_PIX = 90.0 - np.degrees(THETA_PIX)
 
-MASS_COLORS = ["blue", "red", "green"]
+MASS_COLORS = ["#7fb9d6", "#2a6f97", "#cc7000"]
+PSD_COLORS = ["#0072B2", "#D55E00", "#009E73"]
 
 
 def sample_isotropic_iota(iota_min, iota_max, size):
@@ -143,9 +144,9 @@ def plot_psd(psd_list, output_dir, ifos=None):
         ifos = ["H1", "L1", "V1"][:len(psd_list)]
 
     pp.figure()
-    for ifo, psd in zip(ifos, psd_list):
+    for i, (ifo, psd) in enumerate(zip(ifos, psd_list)):
         if psd is not None:
-            pp.loglog(psd.sample_frequencies, psd, label=f"{ifo} PSD")
+            pp.loglog(psd.sample_frequencies, psd, color=PSD_COLORS[i % len(PSD_COLORS)], label=f"{ifo} PSD")
 
     pp.grid()
     pp.legend()
@@ -567,7 +568,7 @@ def map_samples(skymap):
 def plot_final(output_dir, range_map, skymap, samples, iota_min, iota_max):
     fig = pp.figure()
     ax = pp.axes(projection="astro degrees mollweide")
-    ax.grid()
+    ax.grid(color="0.35", alpha=0.6, linestyle=":", linewidth=0.7)
 
     with fits.open(range_map) as hdulist:
         data = hdulist[1].data
@@ -601,13 +602,13 @@ def plot_final(output_dir, range_map, skymap, samples, iota_min, iota_max):
     vmin, vmax = np.nanmin(hpx), np.nanmax(hpx)
     levels = [round(vmin + (vmax - vmin) / 4, -1), round(vmin + (vmax - vmin) / 2, -1), round(vmin + 3 * (vmax - vmin) / 4, -1)]
 
-    ax.contour_hpx((hpx, "ICRS"), nested=True, colors="red", levels=levels, zorder=1, linestyles=["dotted", "dashdot", "solid"])
+    ax.contour_hpx((hpx, "ICRS"), nested=True, colors="#f05adf", levels=levels, zorder=1, linestyles=["dotted", "dashdot", "solid"])
     ax.imshow_hpx((hpx, "ICRS"), cmap="GnBu_r", alpha=1.0, nested=True, zorder=0)
 
     red_handles = [
-        Line2D([0], [0], color="red", linestyle="dotted", linewidth=2, label=f"{int(levels[0])} Mpc"),
-        Line2D([0], [0], color="red", linestyle="dashdot", linewidth=2, label=f"{int(levels[1])} Mpc"),
-        Line2D([0], [0], color="red", linestyle="solid", linewidth=2, label=f"{int(levels[2])} Mpc"),
+        Line2D([0], [0], color="#f05adf", linestyle="dotted", linewidth=2, label=f"{int(levels[0])} Mpc"),
+        Line2D([0], [0], color="#f05adf", linestyle="dashdot", linewidth=2, label=f"{int(levels[1])} Mpc"),
+        Line2D([0], [0], color="#f05adf", linestyle="solid", linewidth=2, label=f"{int(levels[2])} Mpc"),
     ]
 
     red_legend = ax.legend(handles=red_handles, loc="lower left", frameon=True, bbox_to_anchor=(-0.05, -0.22), borderaxespad=0.5, fontsize=9, handlelength=4.0, borderpad=0.4, labelspacing=0.4, handletextpad=0.8)
@@ -618,6 +619,9 @@ def plot_final(output_dir, range_map, skymap, samples, iota_min, iota_max):
     cbar = pp.colorbar(sm, ax=ax, shrink=1.0, orientation="horizontal", aspect=30)
     cbar.mappable.set_clim(vmin=vmin, vmax=vmax)
     cbar.set_label("Targeted detectability range (Mpc)")
+
+    # Re-apply grid after map artists so it remains visible in the final rendering.
+    ax.grid(color="0.35", alpha=0.6, linestyle=":", linewidth=0.7)
 
     parts = os.path.basename(range_map).replace(".fits", "").split("_")
     cbc_type, m1, m2 = parts[2], parts[4], parts[6]
