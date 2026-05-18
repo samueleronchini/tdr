@@ -214,7 +214,7 @@ The SNR threshold used to define D90 is set with:
 
 The default value is:
 
-    --snr-threshold 8.5
+    --snr-threshold 9
 
 
 OUTPUT FILES
@@ -267,7 +267,7 @@ Use this when the GRB sky position is known.
         --t0 <trigger_time> \
         --ra <right_ascension_deg> \
         --dec <declination_deg> \
-        --snr-threshold 8.5 \
+        --snr-threshold 9 \
         --snr-type mf
 
 Example:
@@ -277,7 +277,7 @@ Example:
         --t0 2020-03-26T12:24:47.903 \
         --ra 245.33 \
         --dec -21.08 \
-        --snr-threshold 8.5 \
+        --snr-threshold 9 \
         --snr-type mf
 
 
@@ -290,7 +290,7 @@ Use this when a HEALPix localization file is available.
         --output-dir <output_directory> \
         --t0 <trigger_time> \
         --skymap-file <skymap_file.fit> \
-        --snr-threshold 8.5 \
+        --snr-threshold 9 \
         --snr-type mf
 
 Example:
@@ -299,7 +299,7 @@ Example:
         --output-dir GRB_GIT \
         --t0 2020-03-26T12:24:47.903 \
         --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
-        --snr-threshold 8.5 \
+        --snr-threshold 9 \
         --snr-type mf
 
 
@@ -319,7 +319,7 @@ To run only a custom inclination range:
         --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
         --iota-min 0 \
         --iota-max 30 \
-        --snr-threshold 8.5 \
+        --snr-threshold 9 \
         --snr-type mf
 
 

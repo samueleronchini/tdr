@@ -118,7 +118,7 @@ class JobInput(BaseModel):
     t0: str = Field(..., min_length=1)
     ra: Optional[float] = None
     dec: Optional[float] = None
-    snr_threshold: float = 8.5
+    snr_threshold: float = 9.0
     snr_type: str = "mf"
     iota_min: Optional[float] = None
     iota_max: Optional[float] = None
@@ -525,7 +525,7 @@ async def create_job(
     dec: Optional[float] = Form(None),
     skymap_path: Optional[str] = Form(None),
     skymap_upload: Optional[UploadFile] = File(None),
-    snr_threshold: float = Form(8.5),
+    snr_threshold: float = Form(9.0),
     snr_type: str = Form("mf"),
     iota_min: Optional[float] = Form(None),
     iota_max: Optional[float] = Form(None),

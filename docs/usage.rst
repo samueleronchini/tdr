@@ -32,7 +32,7 @@ Run with sky position:
      --t0 2020-03-26T12:24:47.903 \
      --ra 245.33 \
      --dec -21.08 \
-     --snr-threshold 8.5 \
+   --snr-threshold 9 \
      --snr-type mf
 
 Run with sky map:
@@ -43,7 +43,7 @@ Run with sky map:
      --output-dir GRB_GIT \
      --t0 2020-03-26T12:24:47.903 \
      --skymap-file examples/glg_healpix_all_bn200326517_v00.fit \
-     --snr-threshold 8.5 \
+   --snr-threshold 9 \
      --snr-type mf
 
 
@@ -54,7 +54,7 @@ Command options
 - ``--dec``: declination in degrees
 - ``--skymap-file``: optional localization sky map FITS file
 - ``--iota-min`` and ``--iota-max``: custom inclination prior in degrees
-- ``--snr-threshold``: detection threshold used for D90 (default: 8.5)
+- ``--snr-threshold``: detection threshold used for D90 (default: 9)
 - ``--snr-type``: ``mf`` (matched-filter-like) or ``opt`` (optimal)
 
 
